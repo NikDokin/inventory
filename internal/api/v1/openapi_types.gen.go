@@ -12,14 +12,7 @@ const (
 
 // Defines values for ResourceType.
 const (
-	Items ResourceType = "items"
-)
-
-// Defines values for UnitType.
-const (
-	Count    UnitType = "count"
-	Gram     UnitType = "gram"
-	Kilogram UnitType = "kilogram"
+	Commodities ResourceType = "commodities"
 )
 
 // CategoryType defines model for CategoryType.
@@ -30,16 +23,18 @@ type CommoditiesItem struct {
 	Category    CategoryType `json:"category"`
 	Description string       `json:"description"`
 	Name        string       `json:"name"`
+	PackageForm string       `json:"packageForm"`
 	Price       float32      `json:"price"`
-	Quantity    float32      `json:"quantity"`
 
-	// Sku Stock keeping unit is the unit of measure in which the stocks of a material are managed.
-	Sku  string   `json:"sku"`
-	Unit UnitType `json:"unit"`
+	// Quantity Count of packages
+	Quantity int `json:"quantity"`
+
+	// Sku Stock keeping unit is the unit of measure in which the stocks of a material are managed
+	Sku string `json:"sku"`
 }
 
-// Error defines model for Error.
-type Error struct {
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
 	// Detail A human-readable explanation specific to this occurrence of the problem
 	Detail string `json:"detail"`
 
@@ -56,19 +51,19 @@ type Error struct {
 
 // GetCommoditiesResponse defines model for GetCommoditiesResponse.
 type GetCommoditiesResponse struct {
-	Data []struct {
-		Attributes []CommoditiesItem `json:"attributes"`
+	Data []GetCommoditiesResponseDataItem `json:"data"`
+}
 
-		// Id Identifier of a commodity
-		Id string `json:"id"`
+// GetCommoditiesResponseDataItem defines model for GetCommoditiesResponseDataItem.
+type GetCommoditiesResponseDataItem struct {
+	Attributes CommoditiesItem `json:"attributes"`
 
-		// Type Available JSON:API resource types
-		Type ResourceType `json:"type"`
-	} `json:"data"`
+	// Id Identifier of a commodity
+	Id string `json:"id"`
+
+	// Type Available JSON:API resource types
+	Type ResourceType `json:"type"`
 }
 
 // ResourceType Available JSON:API resource types
 type ResourceType string
-
-// UnitType defines model for UnitType.
-type UnitType string

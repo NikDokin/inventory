@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"github.com/feynmaz/pkg/logger"
 	"github.com/fungicibus/inventory/config"
-	"github.com/fungicibus/inventory/internal/logger"
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

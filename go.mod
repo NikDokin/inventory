@@ -4,9 +4,9 @@ go 1.22.10
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
+	github.com/feynmaz/pkg v0.0.1
 	github.com/go-chi/chi/v5 v5.2.0
 	github.com/prometheus/client_golang v1.20.5
-	github.com/rs/zerolog v1.33.0
 )
 
 require (
@@ -19,6 +19,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/rs/zerolog v1.33.0 // indirect
 	golang.org/x/sys v0.22.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
