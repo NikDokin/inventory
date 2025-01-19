@@ -15,5 +15,6 @@ func (api *API) WriteJSON(w http.ResponseWriter, r *http.Request, response any) 
 }
 
 func (api *API) WriteError(w http.ResponseWriter, r *http.Request, err error) {
+	// TODO: implement
 	// what message provide here and how?
 }
