@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/fungicibus/inventory/internal/middleware"
 )
 
 func (api *API) WriteJSON(w http.ResponseWriter, r *http.Request, response any) {
@@ -25,7 +27,7 @@ func (api *API) WriteError(w http.ResponseWriter, r *http.Request, err error, op
 		opt(config)
 	}
 
-	requestId := "todo" // TODO: GetRequestId from r *http.Request function in middleware
+	requestId := middleware.GetRequestID(r.Context())
 	now := time.Now().Format(time.RFC3339)
 	response := ErrorResponse{
 		Detail: config.Detail,
