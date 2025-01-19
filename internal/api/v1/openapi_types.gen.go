@@ -33,17 +33,20 @@ type CommoditiesItem struct {
 	Sku string `json:"sku"`
 }
 
+// ErrorMeta defines model for ErrorMeta.
+type ErrorMeta struct {
+	// Timestamp Timestamp of the occurrence of the problem in RFC3339 format
+	Timestamp *string `json:"timestamp,omitempty"`
+}
+
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	// Detail A human-readable explanation specific to this occurrence of the problem
 	Detail string `json:"detail"`
 
 	// Id Id of a request
-	Id   string `json:"id"`
-	Meta struct {
-		// Timestamp Timestamp of the occurrence of the problem in RFC3339 format
-		Timestamp string `json:"timestamp"`
-	} `json:"meta"`
+	Id   string    `json:"id"`
+	Meta ErrorMeta `json:"meta"`
 
 	// Status The HTTP status code applicable to this problem, expressed as a string value
 	Status string `json:"status"`

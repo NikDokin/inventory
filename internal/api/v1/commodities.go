@@ -17,7 +17,8 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 
 	commodities, err := api.storage.GetCommodities(r.Context(), filters)
 	if err != nil {
-		// TODO: handle error, implement WriteError
+		api.WriteError(w, r, err, WithDetail("failed to get commodities"))
+		return
 	}
 
 	responseDataItems := make([]GetCommoditiesResponseDataItem, 0, len(commodities))

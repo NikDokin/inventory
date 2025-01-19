@@ -2,6 +2,7 @@ package mock
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/fungicibus/inventory/internal/types"
@@ -74,6 +75,8 @@ func (m *mockStorage) GetCommodities(ctx context.Context, filters types.Commodit
 				Sku:         "EXO-CAP-FAG",
 			},
 		}
+	} else if nameQuery == "error" {
+		return commodities, fmt.Errorf("mock error")
 	}
 
 	return commodities, nil
