@@ -67,3 +67,9 @@ type GetCommoditiesResponseDataItem struct {
 
 // ResourceType Available JSON:API resource types
 type ResourceType string
+
+// GetCommoditiesParams defines parameters for GetCommodities.
+type GetCommoditiesParams struct {
+	// FilterCommodityName Filter commodities by name (partial match)
+	FilterCommodityName *string `form:"filter[commodity.name],omitempty" json:"filter[commodity.name],omitempty"`
+}

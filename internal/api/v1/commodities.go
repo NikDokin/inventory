@@ -1,33 +1,45 @@
 package v1
 
 import (
-	"errors"
 	"net/http"
+
+	"github.com/fungicibus/inventory/internal/types"
 )
 
 // Get list of all commodities
 // (GET /commodities)
-func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request) {
-	if 1 != 2 {
-		err := errors.New("some error")
-		api.WriteError(w, r, err)
+func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams) {
+	filters := types.CommoditiesFilters{}
+
+	if params.FilterCommodityName != nil {
+		filters.Name = *params.FilterCommodityName
 	}
 
+	commodities, err := api.storage.GetCommodities(r.Context(), filters)
+	if err != nil {
+		// TODO: handle error, implement WriteError
+	}
+
+	responseDataItems := make([]GetCommoditiesResponseDataItem, 0, len(commodities))
+	for _, commodity := range commodities {
+		responseDataItems = append(responseDataItems, GetCommoditiesResponseDataItem{
+			Attributes: CommoditiesItem{
+				Category:    CategoryType(commodity.Category),
+				Name:        commodity.Name,
+				Description: commodity.Description,
+				Price:       commodity.Price,
+				Quantity:    commodity.Quantity,
+				PackageForm: commodity.PackageForm,
+				Sku:         commodity.Sku,
+			},
+			Id:   commodity.Id,
+			Type: Commodities,
+		})
+	}
 
 	response := GetCommoditiesResponse{
-		Data: []GetCommoditiesResponseDataItem{{
-			Attributes: CommoditiesItem{
-				Category:    Culinary,
-				Name:        "Lion's mane",
-				Description: "Hericium erinaceus. The edible fruiting bodies",
-				Price:       5,
-				Quantity:    100,
-				PackageForm: "5 dried pieces",
-				Sku:         "CUL-DRY-LNM",
-			},
-			Id:   "266b9823-9b87-4d73-a0f8-41a2b6c5e832",
-			Type: Commodities,
-		}},
+		Data: responseDataItems,
 	}
-	_ = response
+
+	api.WriteJSON(w, r, response)
 }

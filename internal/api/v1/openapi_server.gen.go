@@ -8,13 +8,14 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
 )
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get list of all commodities
 	// (GET /commodities)
-	GetCommodities(w http.ResponseWriter, r *http.Request)
+	GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -23,7 +24,7 @@ type Unimplemented struct{}
 
 // Get list of all commodities
 // (GET /commodities)
-func (_ Unimplemented) GetCommodities(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -39,8 +40,21 @@ type MiddlewareFunc func(http.Handler) http.Handler
 // GetCommodities operation middleware
 func (siw *ServerInterfaceWrapper) GetCommodities(w http.ResponseWriter, r *http.Request) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetCommoditiesParams
+
+	// ------------- Optional query parameter "filter[commodity.name]" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "filter[commodity.name]", r.URL.Query(), &params.FilterCommodityName)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter[commodity.name]", Err: err})
+		return
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCommodities(w, r)
+		siw.Handler.GetCommodities(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {

@@ -10,6 +10,7 @@ import (
 	"github.com/fungicibus/inventory/config"
 	v1 "github.com/fungicibus/inventory/internal/api/v1"
 	"github.com/fungicibus/inventory/internal/server"
+	mockStorage "github.com/fungicibus/inventory/internal/storage/mock"
 )
 
 func main() {
@@ -27,7 +28,8 @@ func main() {
 	}
 	log.Debug().Msgf("Config: /n%s", string(prettyJSON))
 
-	v1 := v1.New(cfg, log)
+	mockStorage := mockStorage.New()
+	v1 := v1.New(cfg, log, mockStorage)
 
 	server := server.New(cfg, log, v1.GetHandler())
 
