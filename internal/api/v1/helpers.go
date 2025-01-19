@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fungicibus/inventory/internal/middleware"
+	"github.com/feynmaz/pkg/http/middleware"
 )
 
 func (api *API) WriteJSON(w http.ResponseWriter, r *http.Request, response any) {
