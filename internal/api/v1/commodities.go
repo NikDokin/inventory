@@ -17,7 +17,7 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 
 	commodities, err := api.storage.GetCommodities(r.Context(), filters)
 	if err != nil {
-		api.WriteError(w, r, err, WithDetail("failed to get commodities"))
+		api.WriteError(w, r, WithError(err), WithDetail("failed to get commodities"))
 		return
 	}
 
@@ -43,4 +43,14 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 	}
 
 	api.WriteJSON(w, r, response)
+}
+
+// Add to commodity quantity
+// (POST /commodities/{commodityID}/quantity/add)
+func (api *API) AddCommodityQuantity(w http.ResponseWriter, r *http.Request, commodityID string) {
+	if commodityID == "" {
+		msg := "commodityID must not be empty"
+		api.WriteError(w, r, WithDetail(msg), WithStatusCode(http.StatusBadRequest))
+		return
+	}
 }

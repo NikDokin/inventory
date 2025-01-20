@@ -15,6 +15,11 @@ const (
 	Commodities ResourceType = "commodities"
 )
 
+// AddCommodityQuantityRequest defines model for AddCommodityQuantityRequest.
+type AddCommodityQuantityRequest struct {
+	Amount *int `json:"amount,omitempty"`
+}
+
 // CategoryType defines model for CategoryType.
 type CategoryType string
 
@@ -22,6 +27,7 @@ type CategoryType string
 type CommoditiesItem struct {
 	Category    CategoryType `json:"category"`
 	Description string       `json:"description"`
+	Id          string       `json:"id"`
 	Name        string       `json:"name"`
 	PackageForm string       `json:"packageForm"`
 	Price       float32      `json:"price"`
@@ -76,3 +82,6 @@ type GetCommoditiesParams struct {
 	// FilterCommodityName Filter commodities by name (partial match)
 	FilterCommodityName *string `form:"filter[commodity.name],omitempty" json:"filter[commodity.name],omitempty"`
 }
+
+// AddCommodityQuantityJSONRequestBody defines body for AddCommodityQuantity for application/json ContentType.
+type AddCommodityQuantityJSONRequestBody = AddCommodityQuantityRequest
