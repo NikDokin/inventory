@@ -10,16 +10,6 @@ const (
 	Medicinal CategoryType = "medicinal"
 )
 
-// Defines values for ResourceType.
-const (
-	Commodities ResourceType = "commodities"
-)
-
-// AddCommodityQuantityRequest defines model for AddCommodityQuantityRequest.
-type AddCommodityQuantityRequest struct {
-	Amount *int `json:"amount,omitempty"`
-}
-
 // CategoryType defines model for CategoryType.
 type CategoryType string
 
@@ -29,8 +19,10 @@ type CommoditiesItem struct {
 	Description string       `json:"description"`
 	Id          string       `json:"id"`
 	Name        string       `json:"name"`
-	PackageForm string       `json:"packageForm"`
-	Price       float32      `json:"price"`
+
+	// Package Type of a package
+	Package string  `json:"package"`
+	Price   float32 `json:"price"`
 
 	// Quantity Count of packages
 	Quantity int `json:"quantity"`
@@ -39,14 +31,8 @@ type CommoditiesItem struct {
 	Sku string `json:"sku"`
 }
 
-// ErrorMeta defines model for ErrorMeta.
-type ErrorMeta struct {
-	// Timestamp Timestamp of the occurrence of the problem in RFC3339 format
-	Timestamp *string `json:"timestamp,omitempty"`
-}
-
-// ErrorResponse defines model for ErrorResponse.
-type ErrorResponse struct {
+// ErrorItem defines model for ErrorItem.
+type ErrorItem struct {
 	// Detail A human-readable explanation specific to this occurrence of the problem
 	Detail string `json:"detail"`
 
@@ -58,30 +44,24 @@ type ErrorResponse struct {
 	Status string `json:"status"`
 }
 
+// ErrorMeta defines model for ErrorMeta.
+type ErrorMeta struct {
+	// Timestamp Timestamp of the occurrence of the problem in RFC3339 format
+	Timestamp *string `json:"timestamp,omitempty"`
+}
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Errors []ErrorItem `json:"errors"`
+}
+
 // GetCommoditiesResponse defines model for GetCommoditiesResponse.
 type GetCommoditiesResponse struct {
-	Data []GetCommoditiesResponseDataItem `json:"data"`
+	Data []CommoditiesItem `json:"data"`
 }
-
-// GetCommoditiesResponseDataItem defines model for GetCommoditiesResponseDataItem.
-type GetCommoditiesResponseDataItem struct {
-	Attributes CommoditiesItem `json:"attributes"`
-
-	// Id Identifier of a commodity
-	Id string `json:"id"`
-
-	// Type Available JSON:API resource types
-	Type ResourceType `json:"type"`
-}
-
-// ResourceType Available JSON:API resource types
-type ResourceType string
 
 // GetCommoditiesParams defines parameters for GetCommodities.
 type GetCommoditiesParams struct {
-	// FilterCommodityName Filter commodities by name (partial match)
-	FilterCommodityName *string `form:"filter[commodity.name],omitempty" json:"filter[commodity.name],omitempty"`
+	// Name Filter commodities by name (partial match)
+	Name *string `form:"name,omitempty" json:"name,omitempty"`
 }
-
-// AddCommodityQuantityJSONRequestBody defines body for AddCommodityQuantity for application/json ContentType.
-type AddCommodityQuantityJSONRequestBody = AddCommodityQuantityRequest

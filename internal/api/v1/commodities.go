@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/fungicibus/inventory/internal/types"
@@ -11,30 +12,27 @@ import (
 func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams) {
 	filters := types.CommoditiesFilters{}
 
-	if params.FilterCommodityName != nil {
-		filters.Name = *params.FilterCommodityName
+	if params.Name != nil {
+		filters.Name = *params.Name
 	}
 
 	commodities, err := api.storage.GetCommodities(r.Context(), filters)
 	if err != nil {
-		api.WriteError(w, r, WithError(err), WithDetail("failed to get commodities"))
+		api.WriteError(w, r, WithError(fmt.Errorf("failed to get commodities from storage: %w", err)))
 		return
 	}
 
-	responseDataItems := make([]GetCommoditiesResponseDataItem, 0, len(commodities))
+	responseDataItems := make([]CommoditiesItem, 0, len(commodities))
 	for _, commodity := range commodities {
-		responseDataItems = append(responseDataItems, GetCommoditiesResponseDataItem{
-			Attributes: CommoditiesItem{
-				Category:    CategoryType(commodity.Category),
-				Name:        commodity.Name,
-				Description: commodity.Description,
-				Price:       commodity.Price,
-				Quantity:    commodity.Quantity,
-				PackageForm: commodity.PackageForm,
-				Sku:         commodity.Sku,
-			},
-			Id:   commodity.Id,
-			Type: Commodities,
+		responseDataItems = append(responseDataItems, CommoditiesItem{
+			Id:          commodity.Id,
+			Category:    CategoryType(commodity.Category),
+			Name:        commodity.Name,
+			Description: commodity.Description,
+			Price:       commodity.Price,
+			Quantity:    commodity.Quantity,
+			Package:     commodity.Package,
+			Sku:         commodity.Sku,
 		})
 	}
 
@@ -43,14 +41,4 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 	}
 
 	api.WriteJSON(w, r, response)
-}
-
-// Add to commodity quantity
-// (POST /commodities/{commodityID}/quantity/add)
-func (api *API) AddCommodityQuantity(w http.ResponseWriter, r *http.Request, commodityID string) {
-	if commodityID == "" {
-		msg := "commodityID must not be empty"
-		api.WriteError(w, r, WithDetail(msg), WithStatusCode(http.StatusBadRequest))
-		return
-	}
 }

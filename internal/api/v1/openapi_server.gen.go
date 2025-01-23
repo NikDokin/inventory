@@ -16,9 +16,6 @@ type ServerInterface interface {
 	// Get list of all commodities
 	// (GET /commodities)
 	GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams)
-	// Add to commodity quantity
-	// (POST /commodities/{commodityID}/quantity/add)
-	AddCommodityQuantity(w http.ResponseWriter, r *http.Request, commodityID string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -28,12 +25,6 @@ type Unimplemented struct{}
 // Get list of all commodities
 // (GET /commodities)
 func (_ Unimplemented) GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// Add to commodity quantity
-// (POST /commodities/{commodityID}/quantity/add)
-func (_ Unimplemented) AddCommodityQuantity(w http.ResponseWriter, r *http.Request, commodityID string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -54,41 +45,16 @@ func (siw *ServerInterfaceWrapper) GetCommodities(w http.ResponseWriter, r *http
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetCommoditiesParams
 
-	// ------------- Optional query parameter "filter[commodity.name]" -------------
+	// ------------- Optional query parameter "name" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "filter[commodity.name]", r.URL.Query(), &params.FilterCommodityName)
+	err = runtime.BindQueryParameter("form", true, false, "name", r.URL.Query(), &params.Name)
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "filter[commodity.name]", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCommodities(w, r, params)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// AddCommodityQuantity operation middleware
-func (siw *ServerInterfaceWrapper) AddCommodityQuantity(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "commodityID" -------------
-	var commodityID string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "commodityID", chi.URLParam(r, "commodityID"), &commodityID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "commodityID", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddCommodityQuantity(w, r, commodityID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -213,9 +179,6 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/commodities", wrapper.GetCommodities)
-	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/commodities/{commodityID}/quantity/add", wrapper.AddCommodityQuantity)
 	})
 
 	return r

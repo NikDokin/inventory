@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +10,28 @@ import (
 
 	"github.com/feynmaz/pkg/http/middleware"
 )
+
+func (api *API) ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+	// Set max size to prevent exceptionally large requests
+	maxBytes := 1_048_576 // 1MB
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+
+	// Create a decoder with strict settings
+	dec := json.NewDecoder(r.Body)
+
+	// Decode the request body into the destination struct
+	err := dec.Decode(dst)
+	if err != nil {
+		return fmt.Errorf("failed to decode JSON: %w", err)
+	}
+
+	// Check for additional JSON data
+	if dec.More() {
+		return errors.New("request body must only contain a single JSON object")
+	}
+
+	return nil
+}
 
 func (api *API) WriteJSON(w http.ResponseWriter, r *http.Request, response any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -43,13 +66,16 @@ func (api *API) WriteError(w http.ResponseWriter, r *http.Request, opts ...Error
 
 	// Send http response
 	now := time.Now().Format(time.RFC3339)
-	response := ErrorResponse{
+	errItem := ErrorItem{
 		Detail: config.Detail,
 		Id:     requestId,
 		Status: strconv.Itoa(config.StatusCode),
 		Meta: ErrorMeta{
 			Timestamp: &now,
 		},
+	}
+	response := ErrorResponse{
+		Errors: []ErrorItem{errItem},
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(config.StatusCode)
@@ -76,6 +102,7 @@ func WithError(err error) ErrorOption {
 func WithStatusCode(statusCode int) ErrorOption {
 	return func(c *ErrorConfig) {
 		c.StatusCode = statusCode
+		c.Detail = http.StatusText(statusCode)
 	}
 }
 

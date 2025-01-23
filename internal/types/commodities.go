@@ -9,7 +9,7 @@ type Commodity struct {
 	Category    string  `json:"category"`
 	Description string  `json:"description"`
 	Name        string  `json:"name"`
-	PackageForm string  `json:"packageForm"`
+	Package     string  `json:"Package"`
 	Price       float32 `json:"price"`
 	Quantity    int     `json:"quantity"`
 	Sku         string  `json:"sku"`
