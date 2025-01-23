@@ -16,6 +16,9 @@ type ServerInterface interface {
 	// Get list of all commodities
 	// (GET /commodities)
 	GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams)
+	// Create transaction
+	// (POST /transactions)
+	CreateTransaction(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -25,6 +28,12 @@ type Unimplemented struct{}
 // Get list of all commodities
 // (GET /commodities)
 func (_ Unimplemented) GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create transaction
+// (POST /transactions)
+func (_ Unimplemented) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -55,6 +64,20 @@ func (siw *ServerInterfaceWrapper) GetCommodities(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCommodities(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateTransaction operation middleware
+func (siw *ServerInterfaceWrapper) CreateTransaction(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateTransaction(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -179,6 +202,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/commodities", wrapper.GetCommodities)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/transactions", wrapper.CreateTransaction)
 	})
 
 	return r

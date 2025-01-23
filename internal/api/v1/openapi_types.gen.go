@@ -10,6 +10,12 @@ const (
 	Medicinal CategoryType = "medicinal"
 )
 
+// Defines values for TransactionType.
+const (
+	Sale   TransactionType = "sale"
+	Supply TransactionType = "supply"
+)
+
 // CategoryType defines model for CategoryType.
 type CategoryType string
 
@@ -31,12 +37,30 @@ type CommoditiesItem struct {
 	Sku string `json:"sku"`
 }
 
+// CreateTransactionRequest defines model for CreateTransactionRequest.
+type CreateTransactionRequest = TransactionAttributes
+
+// CreateTransactionResponse defines model for CreateTransactionResponse.
+type CreateTransactionResponse struct {
+	// Amount Number representing quantity change, positive or negative
+	Amount      int    `json:"amount"`
+	CommodityID string `json:"commodityID"`
+
+	// CreatedAt Timestamp of the occurrence of the transaction in RFC3339 format
+	CreatedAt string `json:"createdAt"`
+	Id        string `json:"id"`
+
+	// Note Optional note about the transaction
+	Note *string         `json:"note,omitempty"`
+	Type TransactionType `json:"type"`
+}
+
 // ErrorItem defines model for ErrorItem.
 type ErrorItem struct {
 	// Detail A human-readable explanation specific to this occurrence of the problem
 	Detail string `json:"detail"`
 
-	// Id Id of a request
+	// Id Identificator of a request
 	Id   string    `json:"id"`
 	Meta ErrorMeta `json:"meta"`
 
@@ -60,8 +84,28 @@ type GetCommoditiesResponse struct {
 	Data []CommoditiesItem `json:"data"`
 }
 
+// TransactionAttributes defines model for TransactionAttributes.
+type TransactionAttributes struct {
+	// Amount Number representing quantity change, positive or negative
+	Amount      int    `json:"amount"`
+	CommodityID string `json:"commodityID"`
+
+	// CreatedAt Timestamp of the occurrence of the transaction in RFC3339 format
+	CreatedAt string `json:"createdAt"`
+
+	// Note Optional note about the transaction
+	Note *string         `json:"note,omitempty"`
+	Type TransactionType `json:"type"`
+}
+
+// TransactionType defines model for TransactionType.
+type TransactionType string
+
 // GetCommoditiesParams defines parameters for GetCommodities.
 type GetCommoditiesParams struct {
 	// Name Filter commodities by name (partial match)
 	Name *string `form:"name,omitempty" json:"name,omitempty"`
 }
+
+// CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
+type CreateTransactionJSONRequestBody = CreateTransactionRequest

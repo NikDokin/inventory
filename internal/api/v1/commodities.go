@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -18,7 +19,9 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 
 	commodities, err := api.storage.GetCommodities(r.Context(), filters)
 	if err != nil {
-		api.WriteError(w, r, WithError(fmt.Errorf("failed to get commodities from storage: %w", err)))
+		if !errors.Is(err, ErrNoCommodityFound) {
+			api.WriteError(w, r, WithError(fmt.Errorf("failed to get commodities from storage: %w", err)))
+		}
 		return
 	}
 

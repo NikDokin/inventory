@@ -12,6 +12,7 @@ var (
 )
 
 type Storage interface {
-	GetCommodities(ctx context.Context, filters types.CommoditiesFilters) ([]types.Commodity, error)
-	AddCommodityQuantity(ctx context.Context, commodityID string, amout int) (types.Commodity, error)
+	GetCommodities(ctx context.Context, filters types.CommoditiesFilters) ([]*types.Commodity, error)
+
+	CreateTransaction(ctx context.Context, transaction *types.Transaction) error
 }
