@@ -11,6 +11,7 @@ import (
 	v1 "github.com/fungicibus/inventory/internal/api/v1"
 	"github.com/fungicibus/inventory/internal/server"
 	mockStorage "github.com/fungicibus/inventory/internal/storage/mock"
+	"github.com/fungicibus/inventory/internal/storage/pg"
 )
 
 func main() {
@@ -26,7 +27,13 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to marshal config")
 	}
-	log.Debug().Msgf("Config: /n%s", string(prettyJSON))
+	log.Debug().Msgf("Config: %s", string(prettyJSON))
+
+	pg, err := pg.New(cfg.Postgres)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create postgres adapter")
+	}
+	_ = pg
 
 	mockStorage := mockStorage.New()
 	v1 := v1.New(cfg, log, mockStorage)
@@ -44,5 +51,6 @@ func main() {
 	}()
 
 	<-ctx.Done()
+	pg.Close()
 	server.Shutdown()
 }
