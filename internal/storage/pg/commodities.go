@@ -8,6 +8,7 @@ import (
 )
 
 func (s *Adapter) GetCommodities(ctx context.Context, filters types.CommoditiesFilters) ([]*types.Commodity, error) {
+	// TODO: use pagination
 	query := `
 		SELECT
 			id,
@@ -19,21 +20,23 @@ func (s *Adapter) GetCommodities(ctx context.Context, filters types.CommoditiesF
 			quantity,
 			sku
 		FROM commodities
+		WHERE ($1 = '' OR LOWER("name") LIKE LOWER($2))
 	`
-	if filters.Name != "" {
-		filterName := fmt.Sprintf(` WHERE LOWER("name") LIKE LOWER('%s')`, "%"+filters.Name+"%")
-		query += filterName
-	}
 
-	rows, err := s.roPool.Query(ctx, query)
+	commodities := make([]*types.Commodity, 0, 10)
+
+	rows, err := s.roPool.Query(ctx, query,
+		filters.Name,
+		"%"+filters.Name+"%",
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query: %w", err)
+		return nil, fmt.Errorf("failed to query commodities: %w", err)
 	}
+	defer rows.Close()
 
-	commodities := make([]*types.Commodity, 0)
 	for rows.Next() {
-		var commodity types.Commodity
-		err = rows.Scan(
+		commodity := &types.Commodity{}
+		if err := rows.Scan(
 			&commodity.Id,
 			&commodity.Category,
 			&commodity.Description,
@@ -42,13 +45,14 @@ func (s *Adapter) GetCommodities(ctx context.Context, filters types.CommoditiesF
 			&commodity.Price,
 			&commodity.Quantity,
 			&commodity.Sku,
-		)
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan commodity: %w", err)
 		}
+		commodities = append(commodities, commodity)
+	}
 
-		commodities = append(commodities, &commodity)
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error during rows iteration: %w", err)
 	}
 
 	return commodities, nil
