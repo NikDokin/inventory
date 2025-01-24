@@ -39,6 +39,10 @@ func New(cfg config.Postgres) (Adapter, error) {
 	}, nil
 }
 
+func (s *Adapter) RwPool() *pgxpool.Pool {
+	return s.rwPool
+}
+
 func (s *Adapter) Close() {
 	s.roPool.Close()
 	s.rwPool.Close()
