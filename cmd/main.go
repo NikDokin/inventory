@@ -12,9 +12,7 @@ import (
 	v1 "github.com/fungicibus/inventory/internal/api/v1"
 	"github.com/fungicibus/inventory/internal/server"
 	"github.com/fungicibus/inventory/internal/storage/migrations"
-	mockStorage "github.com/fungicibus/inventory/internal/storage/mock"
 	"github.com/fungicibus/inventory/internal/storage/pg"
-	"github.com/jackc/pgx/v5/stdlib"
 )
 
 //go:embed migrations/*.sql
@@ -39,15 +37,11 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create postgres adapter")
 	}
-	_ = pg
-
-	conn := stdlib.OpenDBFromPool(pg.RwPool())
-	if err := migrations.Up(embedMigrations, conn); err != nil {
+	if err := migrations.Up(embedMigrations, pg.DB()); err != nil {
 		log.Fatal().Err(err).Msg("failed to up migrations")
 	}
 
-	mockStorage := mockStorage.New()
-	v1 := v1.New(cfg, log, mockStorage)
+	v1 := v1.New(cfg, log, pg)
 
 	server := server.New(cfg, log, v1.GetHandler())
 
