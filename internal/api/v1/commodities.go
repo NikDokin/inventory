@@ -45,3 +45,9 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 
 	api.WriteJSON(w, r, response)
 }
+
+// Get single commodity by id
+// (GET /commdities/{commodityID})
+func (api *API) GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string) {
+
+}

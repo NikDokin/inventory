@@ -13,6 +13,9 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get single commodity by id
+	// (GET /commdities/{commodityID})
+	GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string)
 	// Get list of all commodities
 	// (GET /commodities)
 	GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams)
@@ -24,6 +27,12 @@ type ServerInterface interface {
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
+
+// Get single commodity by id
+// (GET /commdities/{commodityID})
+func (_ Unimplemented) GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
 
 // Get list of all commodities
 // (GET /commodities)
@@ -45,6 +54,31 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetCommodity operation middleware
+func (siw *ServerInterfaceWrapper) GetCommodity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "commodityID" -------------
+	var commodityID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "commodityID", chi.URLParam(r, "commodityID"), &commodityID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "commodityID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCommodity(w, r, commodityID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetCommodities operation middleware
 func (siw *ServerInterfaceWrapper) GetCommodities(w http.ResponseWriter, r *http.Request) {
@@ -200,6 +234,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/commdities/{commodityID}", wrapper.GetCommodity)
+	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/commodities", wrapper.GetCommodities)
 	})
