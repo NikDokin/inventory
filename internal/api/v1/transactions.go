@@ -17,7 +17,10 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithError(err))
 		return
 	}
-
+	if request.Type != Supply && request.Type != Sale {
+		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithDetail("bad transaction type"))
+		return
+	}
 	createdAt, err := time.Parse(time.RFC3339, request.CreatedAt)
 	if err != nil {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithDetail("bad createdAt value"), WithError(err))
@@ -29,7 +32,6 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	if request.Note != nil {
 		note = *request.Note
 	}
-	savedAt := time.Now()
 	transaction := &types.Transaction{
 		ID:          transactionID,
 		CommodityID: request.CommodityID,
@@ -37,11 +39,12 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		Type:        string(request.Type),
 		Note:        note,
 		CreatedAt:   createdAt,
-		SavedAt:     savedAt,
 	}
-
 	if err := api.storage.CreateTransaction(r.Context(), transaction); err != nil {
-		api.WriteError(w, r, WithStatusCode(http.StatusInternalServerError), WithError(fmt.Errorf("failed to create transaction: %w", err)))
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusInternalServerError),
+			WithError(fmt.Errorf("failed to create transaction: %w", err)),
+		)
 		return
 	}
 

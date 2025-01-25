@@ -41,11 +41,11 @@ func New(cfg config.Postgres) (*Adapter, error) {
 	}, nil
 }
 
-func (s *Adapter) DB() *sql.DB {
-	return stdlib.OpenDBFromPool(s.rwPool)
+func (pg *Adapter) DB() *sql.DB {
+	return stdlib.OpenDBFromPool(pg.rwPool)
 }
 
-func (s *Adapter) Close() {
-	s.roPool.Close()
-	s.rwPool.Close()
+func (pg *Adapter) Close() {
+	pg.roPool.Close()
+	pg.rwPool.Close()
 }

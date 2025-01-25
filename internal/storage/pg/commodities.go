@@ -7,7 +7,7 @@ import (
 	"github.com/fungicibus/inventory/internal/types"
 )
 
-func (s *Adapter) GetCommodities(ctx context.Context, filters types.CommoditiesFilters) ([]*types.Commodity, error) {
+func (pg *Adapter) GetCommodities(ctx context.Context, filters types.CommoditiesFilters) ([]*types.Commodity, error) {
 	// TODO: use pagination
 	query := `
 		SELECT
@@ -25,7 +25,7 @@ func (s *Adapter) GetCommodities(ctx context.Context, filters types.CommoditiesF
 
 	commodities := make([]*types.Commodity, 0, 10)
 
-	rows, err := s.roPool.Query(ctx, query,
+	rows, err := pg.roPool.Query(ctx, query,
 		filters.Name,
 		"%"+filters.Name+"%",
 	)
