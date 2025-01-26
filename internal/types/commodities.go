@@ -1,7 +1,8 @@
 package types
 
 type CommoditiesFilters struct {
-	Name string `json:"name"`
+	CommodityID string `json:"commodityID"`
+	Name        string `json:"name"`
 }
 
 type Commodity struct {

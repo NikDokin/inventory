@@ -20,12 +20,16 @@ func (pg *Adapter) GetCommodities(ctx context.Context, filters types.Commodities
 			quantity,
 			sku
 		FROM commodities
-		WHERE ($1 = '' OR LOWER("name") LIKE LOWER($2))
+		WHERE 
+			1=1
+			AND ($1 = '' OR id = $1)
+			AND ($2 = '' OR LOWER("name") LIKE LOWER($3))
 	`
 
-	commodities := make([]*types.Commodity, 0, 10)
+	commodities := make([]*types.Commodity, 0)
 
 	rows, err := pg.roPool.Query(ctx, query,
+		filters.CommodityID,
 		filters.Name,
 		"%"+filters.Name+"%",
 	)
