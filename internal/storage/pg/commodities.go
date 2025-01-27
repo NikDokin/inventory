@@ -63,6 +63,40 @@ func (pg *Adapter) GetCommodities(ctx context.Context, filters types.Commodities
 }
 
 func (pg *Adapter) CreateCommodity(ctx context.Context, commodity *types.Commodity) error {
-	// TODO: implement
+	query := `
+		INSERT INTO commodities (
+			id,
+			"name",
+			sku,
+			description,
+			category,
+			quantity,
+			"package",
+			price
+		) VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			$5,
+			$6,
+			$7,
+			$8
+		)
+	`
+	_, err := pg.rwPool.Exec(ctx, query,
+		commodity.Id,
+		commodity.Name,
+		commodity.Sku,
+		commodity.Description,
+		commodity.Category,
+		commodity.Quantity,
+		commodity.Package,
+		commodity.Price,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to exec: %w", err)
+	}
+
 	return nil
 }
