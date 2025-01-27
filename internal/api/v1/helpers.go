@@ -74,6 +74,12 @@ func (api *API) WriteError(w http.ResponseWriter, r *http.Request, opts ...Error
 			Timestamp: &now,
 		},
 	}
+	if config.ErrorSourcePounter != "" {
+		errItem.Source = &ErrorSource{
+			Pointer: config.ErrorSourcePounter,
+		}
+	}
+
 	response := ErrorResponse{
 		Errors: []ErrorItem{errItem},
 	}
@@ -88,9 +94,10 @@ func (api *API) WriteError(w http.ResponseWriter, r *http.Request, opts ...Error
 
 type ErrorOption func(*ErrorConfig)
 type ErrorConfig struct {
-	Error      error  `json:"error"`
-	StatusCode int    `json:"statusCode"`
-	Detail     string `json:"detail"`
+	Error              error
+	StatusCode         int
+	Detail             string
+	ErrorSourcePounter string
 }
 
 func WithError(err error) ErrorOption {
@@ -109,5 +116,11 @@ func WithStatusCode(statusCode int) ErrorOption {
 func WithDetail(detail string) ErrorOption {
 	return func(c *ErrorConfig) {
 		c.Detail = detail
+	}
+}
+
+func WithSourcePointer(errorSourcePounter string) ErrorOption {
+	return func(c *ErrorConfig) {
+		c.ErrorSourcePounter = errorSourcePounter
 	}
 }

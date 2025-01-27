@@ -91,8 +91,9 @@ type ErrorItem struct {
 	Detail string `json:"detail"`
 
 	// Id Identificator of a request
-	Id   string    `json:"id"`
-	Meta ErrorMeta `json:"meta"`
+	Id     string       `json:"id"`
+	Meta   ErrorMeta    `json:"meta"`
+	Source *ErrorSource `json:"source,omitempty"`
 
 	// Status The HTTP status code applicable to this problem, expressed as a string value
 	Status string `json:"status"`
@@ -107,6 +108,12 @@ type ErrorMeta struct {
 // ErrorResponse defines model for ErrorResponse.
 type ErrorResponse struct {
 	Errors []ErrorItem `json:"errors"`
+}
+
+// ErrorSource defines model for ErrorSource.
+type ErrorSource struct {
+	// Pointer a JSON Pointer [RFC6901] to the value in the request document that caused the error
+	Pointer string `json:"pointer"`
 }
 
 // GetCommoditiesResponse defines model for GetCommoditiesResponse.

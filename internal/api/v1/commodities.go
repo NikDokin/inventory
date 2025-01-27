@@ -82,11 +82,39 @@ func (api *API) GetCommodity(w http.ResponseWriter, r *http.Request, commodityID
 func (api *API) CreateCommodity(w http.ResponseWriter, r *http.Request) {
 	var request CreateCommodityRequest
 	if err := api.ReadJSON(w, r, &request); err != nil {
-		api.WriteError(w, r, WithError(fmt.Errorf("failed to read request body: %w", err)))
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusBadRequest),
+			WithError(fmt.Errorf("failed to read request body: %w", err)),
+		)
 		return
 	}
 
-	// TODO: validate
+	if request.Data.Price <= 0 {
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusUnprocessableEntity),
+			WithDetail("price must be greater than zero"),
+			WithSourcePointer("/data/price"),
+		)
+		return
+	}
+	if request.Data.Quantity <= 0 {
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusUnprocessableEntity),
+			WithDetail("quantity must be greater than zero"),
+			WithSourcePointer("/data/quantity"),
+		)
+		return
+	}
+	switch request.Data.Category {
+	case Culinary, Medicinal, Exotic:
+		// valid category
+	default:
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusUnprocessableEntity),
+			WithDetail(fmt.Sprintf("invalid category: %s", request.Data.Category)),
+			WithSourcePointer("/data/category"),
+		)
+	}
 
 	commodityID := uuid.New().String()
 	sku := "" // TODO: implement sku generator

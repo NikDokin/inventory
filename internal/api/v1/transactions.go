@@ -17,13 +17,28 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithError(err))
 		return
 	}
-	if request.Data.Type != Supply && request.Data.Type != Sale {
-		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithDetail("bad transaction type"))
+
+	// TODO: check if commodity exists
+
+	switch request.Data.Type {
+	case Supply, Sale:
+		// valid
+	default:
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusUnprocessableEntity),
+			WithDetail(fmt.Sprintf("invalid type: %s", request.Data.Type)),
+			WithSourcePointer("/data/type"),
+		)
 		return
 	}
 	createdAt, err := time.Parse(time.RFC3339, request.Data.CreatedAt)
 	if err != nil {
-		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithDetail("bad createdAt value"), WithError(err))
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusBadRequest),
+			WithDetail(fmt.Sprintf("bad createdAt value: %s", request.Data.CreatedAt)),
+			WithSourcePointer("/data/createdAt"),
+			WithError(err),
+		)
 		return
 	}
 
