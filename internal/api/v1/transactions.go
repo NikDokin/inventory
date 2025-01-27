@@ -17,11 +17,11 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithError(err))
 		return
 	}
-	if request.Type != Supply && request.Type != Sale {
+	if request.Data.Type != Supply && request.Data.Type != Sale {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithDetail("bad transaction type"))
 		return
 	}
-	createdAt, err := time.Parse(time.RFC3339, request.CreatedAt)
+	createdAt, err := time.Parse(time.RFC3339, request.Data.CreatedAt)
 	if err != nil {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithDetail("bad createdAt value"), WithError(err))
 		return
@@ -29,16 +29,17 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 
 	transactionID := uuid.New().String()
 	note := ""
-	if request.Note != nil {
-		note = *request.Note
+	if request.Data.Note != nil {
+		note = *request.Data.Note
 	}
 	transaction := &types.Transaction{
 		ID:          transactionID,
-		CommodityID: request.CommodityID,
-		Amount:      request.Amount,
-		Type:        string(request.Type),
+		CommodityID: request.Data.CommodityID,
+		Amount:      request.Data.Amount,
+		Type:        string(request.Data.Type),
 		Note:        note,
 		CreatedAt:   createdAt,
+		SavedAt:     time.Now().UTC(),
 	}
 	if err := api.storage.CreateTransaction(r.Context(), transaction); err != nil {
 		api.WriteError(w, r,
@@ -49,12 +50,15 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := CreateTransactionResponse{
-		Id:          transaction.ID,
-		CommodityID: request.CommodityID,
-		Amount:      request.Amount,
-		Type:        request.Type,
-		Note:        request.Note,
-		CreatedAt:   request.CreatedAt,
+		Data: TransactionItem{
+			Id:          transaction.ID,
+			CommodityID: transaction.CommodityID,
+			Amount:      transaction.Amount,
+			Type:        request.Data.Type,
+			Note:        request.Data.Note,
+			CreatedAt:   request.Data.CreatedAt,
+			SavedAt:     transaction.SavedAt.Format(time.RFC3339),
+		},
 	}
 
 	api.WriteJSON(w, r, response)

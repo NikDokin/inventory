@@ -13,12 +13,15 @@ import (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Get single commodity by id
-	// (GET /commdities/{commodityID})
-	GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string)
 	// Get list of all commodities
 	// (GET /commodities)
 	GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams)
+	// Create commodity
+	// (POST /commodities)
+	CreateCommodity(w http.ResponseWriter, r *http.Request)
+	// Get single commodity by id
+	// (GET /commodities/{commodityID})
+	GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string)
 	// Create transaction
 	// (POST /transactions)
 	CreateTransaction(w http.ResponseWriter, r *http.Request)
@@ -28,15 +31,21 @@ type ServerInterface interface {
 
 type Unimplemented struct{}
 
-// Get single commodity by id
-// (GET /commdities/{commodityID})
-func (_ Unimplemented) GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // Get list of all commodities
 // (GET /commodities)
 func (_ Unimplemented) GetCommodities(w http.ResponseWriter, r *http.Request, params GetCommoditiesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create commodity
+// (POST /commodities)
+func (_ Unimplemented) CreateCommodity(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get single commodity by id
+// (GET /commodities/{commodityID})
+func (_ Unimplemented) GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -54,31 +63,6 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
-
-// GetCommodity operation middleware
-func (siw *ServerInterfaceWrapper) GetCommodity(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-
-	// ------------- Path parameter "commodityID" -------------
-	var commodityID string
-
-	err = runtime.BindStyledParameterWithOptions("simple", "commodityID", chi.URLParam(r, "commodityID"), &commodityID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "commodityID", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetCommodity(w, r, commodityID)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
 
 // GetCommodities operation middleware
 func (siw *ServerInterfaceWrapper) GetCommodities(w http.ResponseWriter, r *http.Request) {
@@ -98,6 +82,45 @@ func (siw *ServerInterfaceWrapper) GetCommodities(w http.ResponseWriter, r *http
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetCommodities(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateCommodity operation middleware
+func (siw *ServerInterfaceWrapper) CreateCommodity(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateCommodity(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCommodity operation middleware
+func (siw *ServerInterfaceWrapper) GetCommodity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "commodityID" -------------
+	var commodityID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "commodityID", chi.URLParam(r, "commodityID"), &commodityID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "commodityID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCommodity(w, r, commodityID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -235,10 +258,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/commdities/{commodityID}", wrapper.GetCommodity)
+		r.Get(options.BaseURL+"/commodities", wrapper.GetCommodities)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/commodities", wrapper.GetCommodities)
+		r.Post(options.BaseURL+"/commodities", wrapper.CreateCommodity)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/commodities/{commodityID}", wrapper.GetCommodity)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/transactions", wrapper.CreateTransaction)

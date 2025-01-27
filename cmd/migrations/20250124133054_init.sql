@@ -20,8 +20,8 @@ CREATE TABLE transactions (
    commodity_id VARCHAR(36) NOT NULL REFERENCES commodities(id),
    amount INTEGER NOT NULL,
    "type" transaction_type NOT NULL,
-   created_at TIMESTAMP NOT NULL,
-   saved_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+   created_at TIMESTAMPZ NOT NULL,
+   saved_at TIMESTAMPZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
    note TEXT
 );
 -- Create index on commonly queried fields

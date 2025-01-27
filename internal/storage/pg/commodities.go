@@ -61,3 +61,8 @@ func (pg *Adapter) GetCommodities(ctx context.Context, filters types.Commodities
 
 	return commodities, nil
 }
+
+func (pg *Adapter) CreateCommodity(ctx context.Context, commodity *types.Commodity) error {
+	// TODO: implement
+	return nil
+}

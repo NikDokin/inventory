@@ -19,8 +19,8 @@ const (
 // CategoryType defines model for CategoryType.
 type CategoryType string
 
-// CommoditiesItem defines model for CommoditiesItem.
-type CommoditiesItem struct {
+// CommodityItem defines model for CommodityItem.
+type CommodityItem struct {
 	Category    CategoryType `json:"category"`
 	Description string       `json:"description"`
 	Id          string       `json:"id"`
@@ -37,22 +37,52 @@ type CommoditiesItem struct {
 	Sku string `json:"sku"`
 }
 
-// CreateTransactionRequest defines model for CreateTransactionRequest.
-type CreateTransactionRequest = TransactionAttributes
+// CreateCommodityItem defines model for CreateCommodityItem.
+type CreateCommodityItem struct {
+	Category    CategoryType `json:"category"`
+	Description string       `json:"description"`
+	Name        string       `json:"name"`
 
-// CreateTransactionResponse defines model for CreateTransactionResponse.
-type CreateTransactionResponse struct {
+	// Package Type of a package
+	Package string  `json:"package"`
+	Price   float32 `json:"price"`
+
+	// Quantity Count of packages
+	Quantity int `json:"quantity"`
+}
+
+// CreateCommodityRequest defines model for CreateCommodityRequest.
+type CreateCommodityRequest struct {
+	Data CreateCommodityItem `json:"data"`
+}
+
+// CreateCommodityResponse defines model for CreateCommodityResponse.
+type CreateCommodityResponse struct {
+	Data CommodityItem `json:"data"`
+}
+
+// CreateTransactionItem defines model for CreateTransactionItem.
+type CreateTransactionItem struct {
 	// Amount Number representing quantity change, positive or negative
 	Amount      int    `json:"amount"`
 	CommodityID string `json:"commodityID"`
 
 	// CreatedAt Timestamp of the occurrence of the transaction in RFC3339 format
 	CreatedAt string `json:"createdAt"`
-	Id        string `json:"id"`
 
 	// Note Optional note about the transaction
 	Note *string         `json:"note,omitempty"`
 	Type TransactionType `json:"type"`
+}
+
+// CreateTransactionRequest defines model for CreateTransactionRequest.
+type CreateTransactionRequest struct {
+	Data CreateTransactionItem `json:"data"`
+}
+
+// CreateTransactionResponse defines model for CreateTransactionResponse.
+type CreateTransactionResponse struct {
+	Data TransactionItem `json:"data"`
 }
 
 // ErrorItem defines model for ErrorItem.
@@ -81,21 +111,30 @@ type ErrorResponse struct {
 
 // GetCommoditiesResponse defines model for GetCommoditiesResponse.
 type GetCommoditiesResponse struct {
-	Data []CommoditiesItem `json:"data"`
+	Data []CommodityItem `json:"data"`
 }
 
-// TransactionAttributes defines model for TransactionAttributes.
-type TransactionAttributes struct {
+// GetCommodityResponse defines model for GetCommodityResponse.
+type GetCommodityResponse struct {
+	Data CommodityItem `json:"data"`
+}
+
+// TransactionItem defines model for TransactionItem.
+type TransactionItem struct {
 	// Amount Number representing quantity change, positive or negative
 	Amount      int    `json:"amount"`
 	CommodityID string `json:"commodityID"`
 
 	// CreatedAt Timestamp of the occurrence of the transaction in RFC3339 format
 	CreatedAt string `json:"createdAt"`
+	Id        string `json:"id"`
 
 	// Note Optional note about the transaction
-	Note *string         `json:"note,omitempty"`
-	Type TransactionType `json:"type"`
+	Note *string `json:"note,omitempty"`
+
+	// SavedAt Timestamp of saving the transaction to storage in RFC3339 format
+	SavedAt string          `json:"savedAt"`
+	Type    TransactionType `json:"type"`
 }
 
 // TransactionType defines model for TransactionType.
@@ -106,6 +145,9 @@ type GetCommoditiesParams struct {
 	// Name Filter commodities by name (partial match)
 	Name *string `form:"name,omitempty" json:"name,omitempty"`
 }
+
+// CreateCommodityJSONRequestBody defines body for CreateCommodity for application/json ContentType.
+type CreateCommodityJSONRequestBody = CreateCommodityRequest
 
 // CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
 type CreateTransactionJSONRequestBody = CreateTransactionRequest

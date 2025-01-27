@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/fungicibus/inventory/internal/types"
+	"github.com/google/uuid"
 )
 
 // Get list of all commodities
@@ -22,9 +23,9 @@ func (api *API) GetCommodities(w http.ResponseWriter, r *http.Request, params Ge
 		return
 	}
 
-	responseDataItems := make([]CommoditiesItem, 0, len(commodities))
+	responseDataItems := make([]CommodityItem, 0, len(commodities))
 	for _, commodity := range commodities {
-		responseDataItems = append(responseDataItems, CommoditiesItem{
+		responseDataItems = append(responseDataItems, CommodityItem{
 			Id:          commodity.Id,
 			Category:    CategoryType(commodity.Category),
 			Name:        commodity.Name,
@@ -60,15 +61,62 @@ func (api *API) GetCommodity(w http.ResponseWriter, r *http.Request, commodityID
 	}
 
 	commodity := commodities[0]
-	response := CommoditiesItem{
-		Id:          commodity.Id,
-		Category:    CategoryType(commodity.Category),
-		Name:        commodity.Name,
-		Description: commodity.Description,
-		Price:       commodity.Price,
-		Quantity:    commodity.Quantity,
-		Package:     commodity.Package,
-		Sku:         commodity.Sku,
+	response := GetCommodityResponse{
+		Data: CommodityItem{
+			Id:          commodity.Id,
+			Category:    CategoryType(commodity.Category),
+			Name:        commodity.Name,
+			Description: commodity.Description,
+			Price:       commodity.Price,
+			Quantity:    commodity.Quantity,
+			Package:     commodity.Package,
+			Sku:         commodity.Sku,
+		},
+	}
+
+	api.WriteJSON(w, r, response)
+}
+
+// Create commodity
+// (POST /commodities)
+func (api *API) CreateCommodity(w http.ResponseWriter, r *http.Request) {
+	var request CreateCommodityRequest
+	if err := api.ReadJSON(w, r, &request); err != nil {
+		api.WriteError(w, r, WithError(fmt.Errorf("failed to read request body: %w", err)))
+		return
+	}
+
+	// TODO: validate
+
+	commodityID := uuid.New().String()
+	sku := "" // TODO: implement sku generator
+	commodity := types.Commodity{
+		Id:          commodityID,
+		Category:    string(request.Data.Category),
+		Name:        request.Data.Name,
+		Description: request.Data.Description,
+		Price:       request.Data.Price,
+		Quantity:    request.Data.Quantity,
+		Package:     request.Data.Package,
+		Sku:         sku,
+	}
+
+	if err := api.storage.CreateCommodity(r.Context(), &commodity); err != nil {
+		api.WriteError(w, r, WithError(fmt.Errorf("failed to create commodity in storage: %w", err)))
+		return
+	}
+
+	response := CreateCommodityResponse{
+		Data: CommodityItem{
+			Id:          commodity.Id,
+			Category:    CategoryType(commodity.Category),
+			Name:        commodity.Name,
+			Description: commodity.Description,
+			Price:       commodity.Price,
+			Quantity:    commodity.Quantity,
+			Package:     commodity.Package,
+			Sku:         commodity.Sku,
+		},
 	}
 
 	api.WriteJSON(w, r, response)
