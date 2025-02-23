@@ -7,9 +7,11 @@ import (
 )
 
 type Storage interface {
+	BeginTx(ctx context.Context) (types.Tx, error)
+
 	GetCommodities(ctx context.Context, filters types.CommoditiesFilters) ([]*types.Commodity, error)
 	CreateCommodity(ctx context.Context, commodity *types.Commodity) error
-	UpdateCommodityQuantity(ctx context.Context, commodityID string, quantity int) error
+	UpdateCommodityQuantity(ctx context.Context, tx types.Tx, commodityID string, quantity int) error
 
-	CreateTransaction(ctx context.Context, transaction *types.Transaction) error
+	CreateTransaction(ctx context.Context, tx types.Tx, transaction *types.Transaction) error
 }

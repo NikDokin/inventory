@@ -42,6 +42,15 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tx, err := api.storage.BeginTx(r.Context())
+	if err != nil {
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusInternalServerError),
+			WithError(fmt.Errorf("failed to begin storage transaction: %w", err)),
+		)
+		return
+	}
+
 	transactionID := uuid.New().String()
 	note := ""
 	if request.Data.Note != nil {
@@ -56,7 +65,7 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   createdAt,
 		SavedAt:     time.Now().UTC(),
 	}
-	if err := api.storage.CreateTransaction(r.Context(), transaction); err != nil {
+	if err := api.storage.CreateTransaction(r.Context(), tx, transaction); err != nil {
 		api.WriteError(w, r,
 			WithStatusCode(http.StatusInternalServerError),
 			WithError(fmt.Errorf("failed to create transaction: %w", err)),
@@ -69,10 +78,18 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		quantity = -transaction.Amount
 	}
 
-	if err != api.storage.UpdateCommodityQuantity(r.Context(), transaction.CommodityID, quantity) {
+	if err != api.storage.UpdateCommodityQuantity(r.Context(), tx, transaction.CommodityID, quantity) {
 		api.WriteError(w, r,
 			WithStatusCode(http.StatusInternalServerError),
 			WithError(fmt.Errorf("failed to update commodity quantity: %w", err)),
+		)
+		return
+	}
+
+	if err = tx.Commit(r.Context()); err != nil {
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusInternalServerError),
+			WithError(fmt.Errorf("failed to commit storage transaction: %w", err)),
 		)
 		return
 	}
