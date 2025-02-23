@@ -64,6 +64,19 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	quantity := transaction.Amount
+	if TransactionType(transaction.Type) == Sale {
+		quantity = -transaction.Amount
+	}
+
+	if err != api.storage.UpdateCommodityQuantity(r.Context(), transaction.CommodityID, quantity) {
+		api.WriteError(w, r,
+			WithStatusCode(http.StatusInternalServerError),
+			WithError(fmt.Errorf("failed to update commodity quantity: %w", err)),
+		)
+		return
+	}
+
 	response := CreateTransactionResponse{
 		Data: TransactionItem{
 			Id:          transaction.ID,

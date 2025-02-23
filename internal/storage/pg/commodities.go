@@ -100,3 +100,17 @@ func (pg *Adapter) CreateCommodity(ctx context.Context, commodity *types.Commodi
 
 	return nil
 }
+
+func (pg *Adapter) UpdateCommodityQuantity(ctx context.Context, commodityID string, quantity int) error {
+	query := `
+		UPDATE commodities
+		SET quantity = quantity + $2
+		WHERE id = $1
+	`
+	_, err := pg.rwPool.Exec(ctx, query, quantity, commodityID)
+	if err != nil {
+		return fmt.Errorf("failed to exec: %w", err)
+	}
+
+	return nil
+}
