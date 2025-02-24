@@ -13,5 +13,5 @@ type Storage interface {
 	CreateCommodity(ctx context.Context, commodity *types.Commodity) error
 	UpdateCommodityQuantity(ctx context.Context, tx types.Tx, commodityID string, quantity int) error
 
-	CreateTransaction(ctx context.Context, tx types.Tx, transaction *types.Transaction) error
+	CreateMovement(ctx context.Context, tx types.Tx, movement *types.Movement) error
 }

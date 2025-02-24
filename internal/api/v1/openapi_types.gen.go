@@ -10,10 +10,10 @@ const (
 	Medicinal CategoryType = "medicinal"
 )
 
-// Defines values for TransactionType.
+// Defines values for MovementType.
 const (
-	Sale   TransactionType = "sale"
-	Supply TransactionType = "supply"
+	Sale   MovementType = "sale"
+	Supply MovementType = "supply"
 )
 
 // CategoryType defines model for CategoryType.
@@ -61,28 +61,28 @@ type CreateCommodityResponse struct {
 	Data CommodityItem `json:"data"`
 }
 
-// CreateTransactionItem defines model for CreateTransactionItem.
-type CreateTransactionItem struct {
+// CreateMovementItem defines model for CreateMovementItem.
+type CreateMovementItem struct {
 	// Amount Number representing quantity change, positive or negative
 	Amount      int    `json:"amount"`
 	CommodityID string `json:"commodityID"`
 
-	// CreatedAt Timestamp of the occurrence of the transaction in RFC3339 format
+	// CreatedAt Timestamp of the occurrence of the movement in RFC3339 format
 	CreatedAt string `json:"createdAt"`
 
-	// Note Optional note about the transaction
-	Note *string         `json:"note,omitempty"`
-	Type TransactionType `json:"type"`
+	// Note Optional note about the movement
+	Note *string      `json:"note,omitempty"`
+	Type MovementType `json:"type"`
 }
 
-// CreateTransactionRequest defines model for CreateTransactionRequest.
-type CreateTransactionRequest struct {
-	Data CreateTransactionItem `json:"data"`
+// CreateMovementRequest defines model for CreateMovementRequest.
+type CreateMovementRequest struct {
+	Data CreateMovementItem `json:"data"`
 }
 
-// CreateTransactionResponse defines model for CreateTransactionResponse.
-type CreateTransactionResponse struct {
-	Data TransactionItem `json:"data"`
+// CreateMovementResponse defines model for CreateMovementResponse.
+type CreateMovementResponse struct {
+	Data MovementItem `json:"data"`
 }
 
 // ErrorItem defines model for ErrorItem.
@@ -126,26 +126,26 @@ type GetCommodityResponse struct {
 	Data CommodityItem `json:"data"`
 }
 
-// TransactionItem defines model for TransactionItem.
-type TransactionItem struct {
+// MovementItem defines model for MovementItem.
+type MovementItem struct {
 	// Amount Number representing quantity change, positive or negative
 	Amount      int    `json:"amount"`
 	CommodityID string `json:"commodityID"`
 
-	// CreatedAt Timestamp of the occurrence of the transaction in RFC3339 format
+	// CreatedAt Timestamp of the occurrence of the movement in RFC3339 format
 	CreatedAt string `json:"createdAt"`
 	Id        string `json:"id"`
 
-	// Note Optional note about the transaction
+	// Note Optional note about the movement
 	Note *string `json:"note,omitempty"`
 
-	// SavedAt Timestamp of saving the transaction to storage in RFC3339 format
-	SavedAt string          `json:"savedAt"`
-	Type    TransactionType `json:"type"`
+	// SavedAt Timestamp of saving the movement to storage in RFC3339 format
+	SavedAt string       `json:"savedAt"`
+	Type    MovementType `json:"type"`
 }
 
-// TransactionType defines model for TransactionType.
-type TransactionType string
+// MovementType defines model for MovementType.
+type MovementType string
 
 // GetCommoditiesParams defines parameters for GetCommodities.
 type GetCommoditiesParams struct {
@@ -156,5 +156,5 @@ type GetCommoditiesParams struct {
 // CreateCommodityJSONRequestBody defines body for CreateCommodity for application/json ContentType.
 type CreateCommodityJSONRequestBody = CreateCommodityRequest
 
-// CreateTransactionJSONRequestBody defines body for CreateTransaction for application/json ContentType.
-type CreateTransactionJSONRequestBody = CreateTransactionRequest
+// CreateMovementJSONRequestBody defines body for CreateMovement for application/json ContentType.
+type CreateMovementJSONRequestBody = CreateMovementRequest

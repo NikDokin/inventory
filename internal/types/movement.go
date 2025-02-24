@@ -2,7 +2,7 @@ package types
 
 import "time"
 
-type Transaction struct {
+type Movement struct {
 	ID          string    `json:"id"`
 	CommodityID string    `json:"commodityID"`
 	Amount      int       `json:"amount"`

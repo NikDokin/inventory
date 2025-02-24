@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 )
 
-// Create transaction
-// (POST /transactions)
-func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
-	var request CreateTransactionRequest
+// Create movement
+// (POST /movements)
+func (api *API) CreateMovement(w http.ResponseWriter, r *http.Request) {
+	var request CreateMovementResponse
 	if err := api.ReadJSON(w, r, &request); err != nil {
 		api.WriteError(w, r, WithStatusCode(http.StatusBadRequest), WithError(err))
 		return
@@ -46,18 +46,18 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		api.WriteError(w, r,
 			WithStatusCode(http.StatusInternalServerError),
-			WithError(fmt.Errorf("failed to begin storage transaction: %w", err)),
+			WithError(fmt.Errorf("failed to begin storage movement: %w", err)),
 		)
 		return
 	}
 
-	transactionID := uuid.New().String()
+	movementID := uuid.New().String()
 	note := ""
 	if request.Data.Note != nil {
 		note = *request.Data.Note
 	}
-	transaction := &types.Transaction{
-		ID:          transactionID,
+	movement := &types.Movement{
+		ID:          movementID,
 		CommodityID: request.Data.CommodityID,
 		Amount:      request.Data.Amount,
 		Type:        string(request.Data.Type),
@@ -65,20 +65,20 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   createdAt,
 		SavedAt:     time.Now().UTC(),
 	}
-	if err := api.storage.CreateTransaction(r.Context(), tx, transaction); err != nil {
+	if err := api.storage.CreateMovement(r.Context(), tx, movement); err != nil {
 		api.WriteError(w, r,
 			WithStatusCode(http.StatusInternalServerError),
-			WithError(fmt.Errorf("failed to create transaction: %w", err)),
+			WithError(fmt.Errorf("failed to create movement: %w", err)),
 		)
 		return
 	}
 
-	quantity := transaction.Amount
-	if TransactionType(transaction.Type) == Sale {
-		quantity = -transaction.Amount
+	quantity := movement.Amount
+	if MovementType(movement.Type) == Sale {
+		quantity = -movement.Amount
 	}
 
-	if err != api.storage.UpdateCommodityQuantity(r.Context(), tx, transaction.CommodityID, quantity) {
+	if err != api.storage.UpdateCommodityQuantity(r.Context(), tx, movement.CommodityID, quantity) {
 		api.WriteError(w, r,
 			WithStatusCode(http.StatusInternalServerError),
 			WithError(fmt.Errorf("failed to update commodity quantity: %w", err)),
@@ -89,20 +89,20 @@ func (api *API) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	if err = tx.Commit(r.Context()); err != nil {
 		api.WriteError(w, r,
 			WithStatusCode(http.StatusInternalServerError),
-			WithError(fmt.Errorf("failed to commit storage transaction: %w", err)),
+			WithError(fmt.Errorf("failed to commit storage movement: %w", err)),
 		)
 		return
 	}
 
-	response := CreateTransactionResponse{
-		Data: TransactionItem{
-			Id:          transaction.ID,
-			CommodityID: transaction.CommodityID,
-			Amount:      transaction.Amount,
+	response := CreateMovementResponse{
+		Data: MovementItem{
+			Id:          movement.ID,
+			CommodityID: movement.CommodityID,
+			Amount:      movement.Amount,
 			Type:        request.Data.Type,
 			Note:        request.Data.Note,
 			CreatedAt:   request.Data.CreatedAt,
-			SavedAt:     transaction.SavedAt.Format(time.RFC3339),
+			SavedAt:     movement.SavedAt.Format(time.RFC3339),
 		},
 	}
 

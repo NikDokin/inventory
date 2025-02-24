@@ -6,7 +6,7 @@ import (
 	"github.com/fungicibus/inventory/internal/types"
 )
 
-func (m *mockStorage) CreateTransaction(ctx context.Context, transaction *types.Transaction) error {
+func (m *mockStorage) CreateMovement(ctx context.Context, movement *types.Movement) error {
 
 	return nil
 }

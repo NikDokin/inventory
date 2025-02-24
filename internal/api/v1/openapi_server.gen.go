@@ -22,9 +22,9 @@ type ServerInterface interface {
 	// Get single commodity by id
 	// (GET /commodities/{commodityID})
 	GetCommodity(w http.ResponseWriter, r *http.Request, commodityID string)
-	// Create transaction
-	// (POST /transactions)
-	CreateTransaction(w http.ResponseWriter, r *http.Request)
+	// Create movement
+	// (POST /movements)
+	CreateMovement(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -49,9 +49,9 @@ func (_ Unimplemented) GetCommodity(w http.ResponseWriter, r *http.Request, comm
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Create transaction
-// (POST /transactions)
-func (_ Unimplemented) CreateTransaction(w http.ResponseWriter, r *http.Request) {
+// Create movement
+// (POST /movements)
+func (_ Unimplemented) CreateMovement(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -130,11 +130,11 @@ func (siw *ServerInterfaceWrapper) GetCommodity(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
-// CreateTransaction operation middleware
-func (siw *ServerInterfaceWrapper) CreateTransaction(w http.ResponseWriter, r *http.Request) {
+// CreateMovement operation middleware
+func (siw *ServerInterfaceWrapper) CreateMovement(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateTransaction(w, r)
+		siw.Handler.CreateMovement(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -267,7 +267,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/commodities/{commodityID}", wrapper.GetCommodity)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/transactions", wrapper.CreateTransaction)
+		r.Post(options.BaseURL+"/movements", wrapper.CreateMovement)
 	})
 
 	return r
