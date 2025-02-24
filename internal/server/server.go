@@ -12,6 +12,7 @@ import (
 	"github.com/fungicibus/inventory/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type Server struct {
@@ -64,6 +65,14 @@ func (s *Server) getRouter() *chi.Mux {
 
 	// API
 	router.Mount("/api/v1", s.v1)
+
+	// Swagger
+	router.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
+	router.Get("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, s.cfg.OpenapiPath)
+	})
 
 	return router
 }

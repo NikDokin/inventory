@@ -8,9 +8,10 @@ import (
 )
 
 type Config struct {
-	Server   Server   `json:"server" envPrefix:"SERVER_"`
-	Postgres Postgres `json:"postgres" envPrefix:"PG_"`
-	LogLevel int      `json:"log_level" env:"LOG_LEVEL"`
+	Server      Server   `json:"server" envPrefix:"SERVER_"`
+	Postgres    Postgres `json:"postgres" envPrefix:"PG_"`
+	LogLevel    int      `json:"log_level" env:"LOG_LEVEL"`
+	OpenapiPath string   `json:"openapi_path" env:"OPENAPI_PATH"`
 }
 
 type Server struct {
