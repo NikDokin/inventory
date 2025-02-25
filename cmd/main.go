@@ -15,17 +15,23 @@ import (
 	"github.com/fungicibus/inventory/internal/storage/pg"
 )
 
+var Tag string
+var Commit string
+
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
 func main() {
 	log := logger.New()
 
+	version := getVersion()
+
 	cfg, err := config.GetDefault()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to get config")
 	}
 	log.SetLevel(cfg.LogLevel)
+	cfg.AppVersion = version
 
 	prettyJSON, err := json.MarshalIndent(cfg, "", "    ")
 	if err != nil {
@@ -58,4 +64,16 @@ func main() {
 	<-ctx.Done()
 	pg.Close()
 	server.Shutdown()
+}
+
+func getVersion() string {
+	tag, commit := Tag, Commit
+
+	if Tag == "" {
+		tag = "<unset>"
+	}
+	if Commit == "" {
+		commit = "<unset>"
+	}
+	return tag + "-" + commit
 }

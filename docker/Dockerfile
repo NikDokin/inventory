@@ -14,7 +14,10 @@ RUN go mod download
 COPY . .
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server cmd/main.go
+RUN GIT_DESCRIBE=$(git describe --tags --always) && \
+    TAG=$(echo "$GIT_DESCRIBE" | cut -d'-' -f1) && \
+    COMMIT=$(echo "$GIT_DESCRIBE" | cut -d'-' -f3) && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags "-X main.Tag=${TAG} -X main.Commit=${COMMIT}" -o /server cmd/main.go
 
 # Optional:
 # To bind to a TCP port, runtime parameters must be supplied to the docker command.

@@ -13,7 +13,7 @@ type Config struct {
 	LogLevel int      `json:"log_level" env:"LOG_LEVEL"`
 
 	OpenapiPath string `json:"openapi_path" env:"OPENAPI_PATH"`
-	AppVersion  string `json:"app_version" env:"APP_VERSION"`
+	AppVersion  string `json:"app_version" env:"-"`
 }
 
 type Server struct {
