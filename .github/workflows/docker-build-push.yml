@@ -37,6 +37,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: docker/Dockerfile
           push: true
           tags: |
             crpi-rmwg2e8d0sa9oqxa.ap-southeast-1.personal.cr.aliyuncs.com/fungicibus/inventory:${{ steps.tag.outputs.tag }}
