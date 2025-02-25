@@ -1,0 +1,43 @@
+name: Build and Push Docker to Alibaba CR
+
+# Trigger workflow only on SemVer tags
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # Matches semantic versions like v1.0.0, v1.2.3
+  
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login to Alibaba Container Registry
+      - name: Login to Alibaba CR
+        uses: docker/login-action@v3
+        with:
+          registry: crpi-rmwg2e8d0sa9oqxa.ap-southeast-1.personal.cr.aliyuncs.com
+          username: ${{ secrets.ALIYUN_USERNAME }}
+          password: ${{ secrets.ALIYUN_PASSWORD }}
+      
+      # Extract tag name and create image tag
+      - name: Extract tag name
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      # Build and push Docker image
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            crpi-rmwg2e8d0sa9oqxa.ap-southeast-1.personal.cr.aliyuncs.com/fungicibus/inventory:${{ steps.tag.outputs.tag }}
+            crpi-rmwg2e8d0sa9oqxa.ap-southeast-1.personal.cr.aliyuncs.com/fungicibus/inventory:latest
