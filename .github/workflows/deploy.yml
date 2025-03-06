@@ -1,0 +1,64 @@
+name: Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker to Docker Hub"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine Docker Image Tag
+        id: tag
+        run: |
+          REF_TYPE=$(echo "${{ github.event.workflow_run.head_branch }}")
+          
+          if [[ "$REF_TYPE" == "develop" ]]; then
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            echo "tag=develop-${SHORT_SHA}" >> $GITHUB_ENV
+          elif [[ "$REF_TYPE" == "release" || "$REF_TYPE" == "master" ]]; then
+            TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true)
+            if [[ -z "$TAG" ]]; then
+              echo "Не найден корректный тег для release/master. Выход..."
+              exit 1
+            fi
+            echo "tag=$TAG" >> $GITHUB_ENV
+          else
+            echo "Неизвестная ветка: $REF_TYPE. Выход..."
+            exit 1
+          fi
+
+      - name: Deploy to Server
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          IMAGE_NAME: shifter1703/fungicibus
+        run: |
+          echo "$SSH_KEY" > private_key && chmod 600 private_key
+          BRANCH=$(echo "${{ github.event.workflow_run.head_branch }}")
+
+          if [[ "$BRANCH" == "develop" ]]; then
+            PORT=8081
+          elif [[ "$BRANCH" == "release" ]]; then
+            PORT=8082
+          elif [[ "$BRANCH" == "master" ]]; then
+            PORT=8083
+          else
+            echo "Неизвестная ветка. Выход..."
+            exit 1
+          fi
+
+          ssh -i private_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
+            docker pull $IMAGE_NAME:${{ env.tag }}
+            docker stop app_$BRANCH || true
+            docker rm app_$BRANCH || true
+            docker run -d --name app_$BRANCH -p $PORT:80 $IMAGE_NAME:${{ env.tag }}
+          EOF

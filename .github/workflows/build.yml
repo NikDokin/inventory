@@ -28,9 +28,9 @@ jobs:
         id: tag
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            BRANCH=$(git branch --contains ${{ github.ref }} | grep -E 'main|stage' || true)
+            BRANCH=$(git branch --contains ${{ github.ref }} | grep -E 'master|release' || true)
             if [[ -z "$BRANCH" ]]; then
-              echo "Этот тег не принадлежит main или stage. Выход..."
+              echo "Этот тег не принадлежит master или release. Выход..."
               exit 1
             fi
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
