@@ -1,19 +1,14 @@
 name: Deploy to Server
 
 on:
-  push:
-    branches:
-      - develop
-# on:
-#   workflow_run:
-#     workflows: ["Build and Push Docker to Docker Hub"]
-#     types:
-#       - completed
+  workflow_run:
+    workflows: ["Build and Push Docker to Docker Hub"]
+    types:
+      - completed
 
 jobs:
   deploy:
     runs-on: self-hosted
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout repository
