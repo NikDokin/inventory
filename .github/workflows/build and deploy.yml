@@ -1,0 +1,104 @@
+name: Build and Deploy Docker Image
+
+on:
+  push:
+    branches:
+      - develop
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      docker_tag: ${{ steps.tag.outputs.docker_tag }}  # Передаем тег как output
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Determine Docker Image Tag
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            BRANCH=$(git branch --contains ${{ github.sha }} | grep -E 'master|release' || true)
+            if [[ -z "$BRANCH" ]]; then
+              echo "Этот тег не принадлежит master или release. Выход..."
+              exit 1
+            fi
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_ENV
+          else
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            TAG="develop-${SHORT_SHA}"
+            echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_ENV
+          fi
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: shifter1703/fungicibus
+          tags: ${{ env.tag }}
+          labels: |
+            org.opencontainers.image.title=your-repo-name
+            org.opencontainers.image.version=${{ env.tag }}
+            org.opencontainers.image.source=${{ github.repository }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=shifter1703/fungicibus:cache
+          cache-to: type=inline
+
+  deploy:
+    needs: build-and-push  # Ждем завершения сборки
+    if: ${{ success() }}   # Запускаем только если build-and-push успешен
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Debug info
+        run: |
+          echo "Ref: ${{ github.ref }}"
+          echo "SHA: ${{ github.sha }}"
+          echo "Tag from build: ${{ needs.build-and-push.outputs.docker_tag }}"
+
+      - name: Pull and restart Docker container
+        env:
+          IMAGE_NAME: shifter1703/fungicibus
+          DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}  # Используем тег из предыдущего job
+        run: |
+          BRANCH=${{ github.ref_name }}
+          if [[ "$BRANCH" == "develop" ]]; then
+            PORT=8081
+          elif [[ "$BRANCH" == "release" ]]; then
+            PORT=8082
+          elif [[ "$BRANCH" == "master" ]]; then
+            PORT=8083
+          else
+            echo "Неизвестная ветка: $BRANCH. Выход..."
+            exit 1
+          fi
+          docker pull $IMAGE_NAME:$DOCKER_TAG
+          docker stop app_$BRANCH || true
+          docker rm app_$BRANCH || true
+          docker run -d --name app_$BRANCH -p $PORT:80 $IMAGE_NAME:$DOCKER_TAG
