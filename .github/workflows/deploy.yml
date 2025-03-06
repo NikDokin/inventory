@@ -35,14 +35,10 @@ jobs:
             exit 1
           fi
 
-      - name: Deploy to Server
+      - name: Pull and restart Docker container
         env:
-          SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_USER: ${{ secrets.SSH_USER }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
           IMAGE_NAME: shifter1703/fungicibus
         run: |
-          echo "$SSH_KEY" > private_key && chmod 600 private_key
           BRANCH=$(echo "${{ github.event.workflow_run.head_branch }}")
 
           if [[ "$BRANCH" == "develop" ]]; then
@@ -56,9 +52,7 @@ jobs:
             exit 1
           fi
 
-          ssh -i private_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << EOF
-            docker pull $IMAGE_NAME:${{ env.tag }}
-            docker stop app_$BRANCH || true
-            docker rm app_$BRANCH || true
-            docker run -d --name app_$BRANCH -p $PORT:80 $IMAGE_NAME:${{ env.tag }}
-          EOF
+          docker pull $IMAGE_NAME:${{ env.tag }}
+          docker stop app_$BRANCH || true
+          docker rm app_$BRANCH || true
+          docker run -d --name app_$BRANCH -p $PORT:80 $IMAGE_NAME:${{ env.tag }}
