@@ -99,6 +99,7 @@ jobs:
           grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | while read -r line; do
             if [[ $line =~ \${([^}]+)} ]]; then
               var_name="${BASH_REMATCH[1]}"
+              cat $ENV_FILE | grep -E "^$var_name="
               if [ -z "${!var_name}" ]; then
                 echo "Error: Secret $var_name not found in GitHub Secrets"
                 exit 1
