@@ -94,6 +94,8 @@ jobs:
         shell: bash
 
       - name: Install Vault CLI
+        env:
+          ENV_FILE: dev.env
         run: |
           # Проверяем, установлен ли vault
           if ! command -v vault &> /dev/null; then
@@ -105,7 +107,7 @@ jobs:
           else
             echo "Vault CLI already installed"
           fi
-        shell: /usr/bin/bash --noprofile --norc -e -o pipefail
+        shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
 
       - name: Fetch Secrets from Vault and Parse .env
         env:
