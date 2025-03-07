@@ -106,6 +106,7 @@ jobs:
             fi
           done
           grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
+          cat parsed_env
         shell: bash
 
       - name: Pull and restart Docker container
