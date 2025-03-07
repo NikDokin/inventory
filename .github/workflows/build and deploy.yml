@@ -114,17 +114,17 @@ jobs:
           DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}  # Используем тег из предыдущего job
         run: |
           BRANCH=${{ github.ref_name }}
-          if [[ "$BRANCH" == "develop" ]]; then
-            PORT=8081
-          elif [[ "$BRANCH" == "release" ]]; then
-            PORT=8082
-          elif [[ "$BRANCH" == "master" ]]; then
-            PORT=8083
-          else
-            echo "Неизвестная ветка: $BRANCH. Выход..."
-            exit 1
-          fi
+          case "$BRANCH" in
+            develop) PORT=8081 ;;
+            release) PORT=8082 ;;
+            master) PORT=8083 ;;
+            *) echo "Неизвестная ветка: $BRANCH. Выход..."; exit 1 ;;
+          esac
           docker pull $IMAGE_NAME:$DOCKER_TAG
           docker stop app_$BRANCH || true
           docker rm app_$BRANCH || true
-          docker run -d --name app_$BRANCH --env-file parsed_env -p $PORT:80 $IMAGE_NAME:$DOCKER_TAG
+          docker run -d \
+            --name app_$BRANCH \
+            --env-file parsed_env \
+            -p $PORT:80 \
+            $IMAGE_NAME:$DOCKER_TAG
