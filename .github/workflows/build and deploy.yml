@@ -126,17 +126,15 @@ jobs:
           cat parsed_env
 
       - name: Pull and restart Docker container
-        env:
-          IMAGE_NAME: shifter1703/fungicibus
-          DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}
+        shell: bash
         run: |
-          BRANCH=${{ github.ref_name }}
           case "$BRANCH" in
             develop) PORT=8081 ;;
             release) PORT=8082 ;;
             main) PORT=8083 ;;
             *) echo "Неизвестная ветка: $BRANCH. Выход..."; exit 1 ;;
           esac
+
           docker pull $IMAGE_NAME:$DOCKER_TAG
           docker stop app_$BRANCH || true
           docker rm app_$BRANCH || true
@@ -146,4 +144,3 @@ jobs:
             --restart unless-stopped \
             -p $PORT:80 \
             $IMAGE_NAME:$DOCKER_TAG
-        shell: /usr/bin/bash --noprofile --norc -e -o pipefail
