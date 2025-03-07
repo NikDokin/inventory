@@ -106,6 +106,14 @@ jobs:
           # Проверка подключения к Vault
           vault status || { echo "Cannot connect to Vault"; exit 1; }
       
+          # Тест регулярного выражения
+          test_value='${SECRET_SOURCE}'
+          if [[ "$test_value" =~ ^\${([^}]+)}$ ]]; then
+            echo "Test passed: '${BASH_REMATCH[1]}'"
+          else
+            echo "Test failed for '$test_value'"
+          fi
+      
           # Создание временного файла для результата
           touch parsed_env
       
@@ -118,9 +126,9 @@ jobs:
             key=$(echo "$key" | xargs)
             value=$(echo "$value" | xargs)
       
-            echo "Processing: '$key'='$value'"  # Отладочный вывод с кавычками
+            echo "Processing: '$key'='$value'"
       
-            # Проверка, является ли значение ссылкой на секрет (например, ${SECRET_NAME})
+            # Проверка, является ли значение ссылкой на секрет
             if [[ "$value" =~ ^\${([^}]+)}$ ]]; then
               secret_name="${BASH_REMATCH[1]}"
               echo "Matched secret_name: '$secret_name'"
