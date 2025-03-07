@@ -102,26 +102,36 @@ jobs:
         run: |
           echo "Using environment file: $ENV_FILE"
           export VAULT_TOKEN="$VAULT_TOKEN"
-
+      
+          # Проверка подключения к Vault
           vault status || { echo "Cannot connect to Vault"; exit 1; }
-
+      
+          # Создание временного файла для результата
           touch parsed_env
-
-          grep -v '^#' "$ENV_FILE" | grep -v '^[[:space:]]*$' | while read -r line; do
-            if [[ $line =~ ^([^=]+)=\${([^}]+)}$ ]]; then
-              key="${BASH_REMATCH[1]}"
-              secret_name="${BASH_REMATCH[2]}"
+      
+          # Чтение файла, игнорируя комментарии и пустые строки
+          while IFS='=' read -r key value; do
+            # Пропускаем пустые строки и комментарии
+            [[ -z "$key" || "$key" =~ ^# ]] && continue
+      
+            # Убираем лишние пробелы
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+      
+            # Проверка, является ли значение ссылкой на секрет (например, ${SECRET_NAME})
+            if [[ "$value" =~ ^\${([^}]+)}$ ]]; then
+              secret_name="${BASH_REMATCH[1]}"
               secret_value=$(vault kv get -field="$secret_name" secret/myapp 2>/dev/null)
               if [[ -z "$secret_value" ]]; then
-                echo "Error: Secret $secret_name not found in Vault"
+                echo "Error: Secret '$secret_name' not found in Vault at secret/myapp"
                 exit 1
               fi
               echo "$key=$secret_value" >> parsed_env
             else
-              echo "$line" >> parsed_env
+              echo "$key=$value" >> parsed_env
             fi
-          done
-
+          done < <(cat "$ENV_FILE")
+      
           echo "Parsed .env content:"
           cat parsed_env
             
