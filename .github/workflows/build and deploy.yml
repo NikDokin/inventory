@@ -93,10 +93,25 @@ jobs:
           fi
         shell: bash
 
+      - name: Install Vault CLI
+        run: |
+          # Проверяем, установлен ли vault
+          if ! command -v vault &> /dev/null; then
+            echo "Vault CLI not found, installing..."
+            # Устанавливаем Vault CLI (для Ubuntu/Debian)
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+            sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+            sudo apt-get update && sudo apt-get install -y vault
+          else
+            echo "Vault CLI already installed"
+          fi
+        shell: /usr/bin/bash --noprofile --norc -e -o pipefail
+
       - name: Fetch Secrets from Vault and Parse .env
         env:
-          VAULT_ADDR: "http://94.131.105.35:8200"
+          VAULT_ADDR: http://94.131.105.35:8200
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+          ENV_FILE: dev.env
         run: |
           echo "Using environment file: $ENV_FILE"
           export VAULT_TOKEN="$VAULT_TOKEN"
@@ -122,7 +137,7 @@ jobs:
           
           echo "Parsed .env content:"
           cat parsed_env
-        shell: bash
+        shell: /usr/bin/bash --noprofile --norc -e -o pipefail
 
       - name: Pull and restart Docker container
         env:
@@ -145,3 +160,4 @@ jobs:
             --restart unless-stopped \
             -p $PORT:80 \
             $IMAGE_NAME:$DOCKER_TAG
+        shell: /usr/bin/bash --noprofile --norc -e -o pipefail
