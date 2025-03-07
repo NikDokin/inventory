@@ -118,11 +118,12 @@ jobs:
             key=$(echo "$key" | xargs)
             value=$(echo "$value" | xargs)
       
-            echo "Processing: $key=$value"  # Отладочный вывод
+            echo "Processing: '$key'='$value'"  # Отладочный вывод с кавычками
       
             # Проверка, является ли значение ссылкой на секрет (например, ${SECRET_NAME})
             if [[ "$value" =~ ^\${([^}]+)}$ ]]; then
               secret_name="${BASH_REMATCH[1]}"
+              echo "Matched secret_name: '$secret_name'"
               echo "Fetching secret '$secret_name' from Vault..."
               secret_value=$(vault kv get -field="$secret_name" secret/myapp)
               if [[ -z "$secret_value" ]]; then
@@ -131,6 +132,7 @@ jobs:
               fi
               echo "$key=$secret_value" >> parsed_env
             else
+              echo "No match for '$value' as a secret reference"
               echo "$key=$value" >> parsed_env
             fi
           done < <(cat "$ENV_FILE")
