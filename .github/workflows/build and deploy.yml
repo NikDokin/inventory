@@ -92,48 +92,20 @@ jobs:
             echo "Deploying from develop branch, using dev.env"
           fi
         shell: bash
-
-      # - name: Parse .env File and Fetch Secrets with envsubst
-      #   run: |
-      #     echo "Using environment file: $ENV_FILE"
-      #     grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | while read -r line; do
-      #       if [[ $line =~ \${([^}]+)} ]]; then
-      #         var_name="${BASH_REMATCH[1]}"
-      #         if [ -z "${!var_name}" ]; then
-      #           echo "Error: Secret $var_name not found in GitHub Secrets"
-      #           exit 1
-      #         fi
-      #       fi
-      #     done
-      #     grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
-      #     cat parsed_env
-      #   shell: bash
-      
-      - name: Parse .env File and Inject Secrets
+  
+      - name: Parse .env File and Fetch Secrets with envsubst
         run: |
           echo "Using environment file: $ENV_FILE"
-
-          # Загружаем все GitHub Secrets в окружение
-          echo "Loading GitHub Secrets..."
-          for secret in $(env | grep '^SECRET_' | cut -d= -f1); do
-            echo "Found secret: $secret"
-            export "$secret=${{ secrets[secret] }}"
+          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | while read -r line; do
+            if [[ $line =~ \${([^}]+)} ]]; then
+              var_name="${BASH_REMATCH[1]}"
+              if [ -z "${!var_name}" ]; then
+                echo "Error: Secret $var_name not found in GitHub Secrets"
+                exit 1
+              fi
+            fi
           done
-
-          # Обрабатываем .env файл
-          awk '
-            BEGIN { FS=OFS="=" }
-            /^[^#]/ { 
-              if ($2 ~ /^\$/) { 
-                varname = substr($2, 2); 
-                print $1, ENVIRON[varname] ? ENVIRON[varname] : $2 
-              } else { 
-                print 
-              }
-            }' "$ENV_FILE" > parsed_env
-
-          echo "Final parsed_env file:"
-          cat parsed_env
+          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
         shell: bash
 
       - name: Pull and restart Docker container
@@ -154,5 +126,6 @@ jobs:
           docker run -d \
             --name app_$BRANCH \
             --env-file parsed_env \
+            --restart unless-stopped \
             -p $PORT:80 \
             $IMAGE_NAME:$DOCKER_TAG
