@@ -109,7 +109,7 @@ jobs:
 
       - name: Fetch Secrets from Vault and Parse .env
         env:
-          VAULT_ADDR: "https://your-vault-server:8200"  # Адрес вашего Vault-сервера
+          VAULT_ADDR: "http://94.131.105.35:8200"  # Адрес вашего Vault-сервера
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}      # Токен для доступа к Vault
         run: |
           echo "Using environment file: $ENV_FILE"
