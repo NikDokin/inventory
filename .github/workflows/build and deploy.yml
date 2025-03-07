@@ -122,8 +122,9 @@ jobs:
       
             # Проверка с помощью grep
             if echo "$value" | grep -qE '^\${[^}]+}$'; then
+              echo "Value matches secret pattern: '$value'"
               secret_name=$(echo "$value" | sed -E 's/^\${([^}]+)}$/\1/')
-              echo "Matched secret_name: '$secret_name'"
+              echo "Extracted secret_name: '$secret_name'"
               echo "Fetching secret '$secret_name' from Vault..."
               secret_value=$(vault kv get -field="$secret_name" secret/myapp)
               if [[ -z "$secret_value" ]]; then
