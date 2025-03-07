@@ -108,32 +108,31 @@ jobs:
       #     grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
       #     cat parsed_env
       #   shell: bash
-
-      # - name: Parse .env File and Fetch Secrets with envsubst
-      #   run: |
-      #     echo "Using environment file: $ENV_FILE"
-      #     export $(grep -v '^#' $ENV_FILE | xargs)  # Загружаем все переменные из файла в окружение
-      #     grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
-      #     cat parsed_env  # Проверяем результат
-      #   shell: bash
-
-      - name: Load Secrets and Parse .env File
+      
+      - name: Parse .env File and Inject Secrets
         run: |
           echo "Using environment file: $ENV_FILE"
-          
-          # Загружаем переменные из файла в окружение
-          export $(grep -v '^#' $ENV_FILE | xargs)
 
-          # Явно добавляем GitHub Secret в окружение
-          export SECRET_SOURCE="${{ secrets.SECRET_SOURCE }}"
-          
-          # Проверяем, что переменная загрузилась
-          echo "SECRET_SOURCE=$SECRET_SOURCE"
-          
-          # Выполняем замену переменных
-          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
-          
-          # Проверяем результат
+          # Загружаем все GitHub Secrets в окружение
+          echo "Loading GitHub Secrets..."
+          for secret in $(env | grep '^SECRET_' | cut -d= -f1); do
+            echo "Found secret: $secret"
+            export "$secret=${{ secrets[secret] }}"
+          done
+
+          # Обрабатываем .env файл
+          awk '
+            BEGIN { FS=OFS="=" }
+            /^[^#]/ { 
+              if ($2 ~ /^\$/) { 
+                varname = substr($2, 2); 
+                print $1, ENVIRON[varname] ? ENVIRON[varname] : $2 
+              } else { 
+                print 
+              }
+            }' "$ENV_FILE" > parsed_env
+
+          echo "Final parsed_env file:"
           cat parsed_env
         shell: bash
 
