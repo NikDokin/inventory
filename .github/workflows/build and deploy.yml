@@ -82,6 +82,32 @@ jobs:
           echo "SHA: ${{ github.sha }}"
           echo "Tag from build: ${{ needs.build-and-push.outputs.docker_tag }}"
 
+      - name: Determine Environment File
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "ENV_FILE=prod.env" >> $GITHUB_ENV
+            echo "Deploying from main branch, using prod.env"
+          else
+            echo "ENV_FILE=dev.env" >> $GITHUB_ENV
+            echo "Deploying from develop branch, using dev.env"
+          fi
+        shell: bash
+
+      - name: Parse .env File and Fetch Secrets with envsubst
+        run: |
+          echo "Using environment file: $ENV_FILE"
+          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | while read -r line; do
+            if [[ $line =~ \${([^}]+)} ]]; then
+              var_name="${BASH_REMATCH[1]}"
+              if [ -z "${!var_name}" ]; then
+                echo "Error: Secret $var_name not found in GitHub Secrets"
+                exit 1
+              fi
+            fi
+          done
+          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
+        shell: bash
+
       - name: Pull and restart Docker container
         env:
           IMAGE_NAME: shifter1703/fungicibus
@@ -101,4 +127,4 @@ jobs:
           docker pull $IMAGE_NAME:$DOCKER_TAG
           docker stop app_$BRANCH || true
           docker rm app_$BRANCH || true
-          docker run -d --name app_$BRANCH -p $PORT:80 $IMAGE_NAME:$DOCKER_TAG
+          docker run -d --name app_$BRANCH --env-file parsed_env -p $PORT:80 $IMAGE_NAME:$DOCKER_TAG
