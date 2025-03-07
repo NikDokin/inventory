@@ -93,22 +93,6 @@ jobs:
           fi
         shell: bash
 
-      - name: Install Vault CLI
-        env:
-          ENV_FILE: dev.env
-        run: |
-          # Проверяем, установлен ли vault
-          if ! command -v vault &> /dev/null; then
-            echo "Vault CLI not found, installing..."
-            # Устанавливаем Vault CLI (для Ubuntu/Debian)
-            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-            sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-            sudo apt-get update && sudo apt-get install -y vault
-          else
-            echo "Vault CLI already installed"
-          fi
-        shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
-
       - name: Fetch Secrets from Vault and Parse .env
         env:
           VAULT_ADDR: http://94.131.105.35:8200
