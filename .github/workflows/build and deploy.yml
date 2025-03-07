@@ -106,11 +106,15 @@ jobs:
           # Проверка подключения к Vault
           vault status || { echo "Cannot connect to Vault"; exit 1; }
       
+          # Проверка содержимого файла
+          echo "Raw content of $ENV_FILE:"
+          cat -v "$ENV_FILE"
+      
           # Создание временного файла для результата
           touch parsed_env
       
           # Чтение файла, игнорируя комментарии и пустые строки
-          while IFS='=' read -r key value; do
+          while IFS='=' read -r key value || [[ -n "$key" ]]; do
             # Пропускаем пустые строки и комментарии
             [[ -z "$key" || "$key" =~ ^# ]] && continue
       
@@ -136,7 +140,7 @@ jobs:
               echo "No match for '$value' as a secret reference"
               echo "$key=$value" >> parsed_env
             fi
-          done < <(cat "$ENV_FILE")
+          done < <(cat "$ENV_FILE"; echo)
       
           echo "Parsed .env content:"
           cat parsed_env
