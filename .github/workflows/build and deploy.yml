@@ -118,10 +118,13 @@ jobs:
             key=$(echo "$key" | xargs)
             value=$(echo "$value" | xargs)
       
+            echo "Processing: $key=$value"  # Отладочный вывод
+      
             # Проверка, является ли значение ссылкой на секрет (например, ${SECRET_NAME})
             if [[ "$value" =~ ^\${([^}]+)}$ ]]; then
               secret_name="${BASH_REMATCH[1]}"
-              secret_value=$(vault kv get -field="$secret_name" secret/myapp 2>/dev/null)
+              echo "Fetching secret '$secret_name' from Vault..."
+              secret_value=$(vault kv get -field="$secret_name" secret/myapp)
               if [[ -z "$secret_value" ]]; then
                 echo "Error: Secret '$secret_name' not found in Vault at secret/myapp"
                 exit 1
