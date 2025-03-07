@@ -68,8 +68,8 @@ jobs:
           cache-to: type=inline
 
   deploy:
-    needs: build-and-push  # Ждем завершения сборки
-    if: ${{ success() }}   # Запускаем только если build-and-push успешен
+    needs: build-and-push
+    if: ${{ success() }}
     runs-on: self-hosted
 
     steps:
@@ -92,33 +92,67 @@ jobs:
             echo "Deploying from develop branch, using dev.env"
           fi
         shell: bash
-  
-      - name: Parse .env File and Fetch Secrets with envsubst
+
+      - name: Install Vault CLI (if not installed)
+        run: |
+          # Проверяем, установлен ли vault
+          if ! command -v vault &> /dev/null; then
+            echo "Vault CLI not found, installing..."
+            # Устанавливаем Vault CLI (версия может быть другой)
+            curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+            sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+            sudo apt-get update && sudo apt-get install -y vault
+          else
+            echo "Vault CLI already installed"
+          fi
+        shell: bash
+
+      - name: Fetch Secrets from Vault and Parse .env
+        env:
+          VAULT_ADDR: "https://your-vault-server:8200"  # Адрес вашего Vault-сервера
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}      # Токен для доступа к Vault
         run: |
           echo "Using environment file: $ENV_FILE"
-          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | while read -r line; do
-            if [[ $line =~ \${([^}]+)} ]]; then
-              var_name="${BASH_REMATCH[1]}"
-              cat $ENV_FILE | grep -E "^$var_name="
-              if [ -z "${!var_name}" ]; then
-                echo "Error: Secret $var_name not found in GitHub Secrets"
+          
+          # Аутентификация в Vault (токен уже в переменной VAULT_TOKEN)
+          export VAULT_TOKEN="$VAULT_TOKEN"
+          
+          # Создаём файл с подставленными значениями
+          touch parsed_env
+          
+          # Читаем .env и подставляем значения из Vault
+          grep -v '^#' "$ENV_FILE" | grep -v '^[[:space:]]*$' | while read -r line; do
+            if [[ $line =~ ^([^=]+)=\${([^}]+)}$ ]]; then
+              key="${BASH_REMATCH[1]}"  # Например, SECRET_SOURCE
+              secret_name="${BASH_REMATCH[2]}"  # Например, SECRET_SOURCE
+              # Запрашиваем значение из Vault
+              secret_value=$(vault kv get -field="$secret_name" secret/myapp 2>/dev/null)
+              if [[ -z "$secret_value" ]]; then
+                echo "Error: Secret $secret_name not found in Vault"
                 exit 1
               fi
+              echo "$key=$secret_value" >> parsed_env
+            else
+              # Если строка без переменной, копируем как есть
+              echo "$line" >> parsed_env
             fi
           done
-          grep -v '^#' $ENV_FILE | grep -v '^[[:space:]]*$' | envsubst > parsed_env
+          
+          # Выводим результат для отладки
+          echo "Parsed .env content:"
+          cat parsed_env
         shell: bash
 
       - name: Pull and restart Docker container
         env:
           IMAGE_NAME: shifter1703/fungicibus
-          DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}  # Используем тег из предыдущего job
+          DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}
         run: |
           BRANCH=${{ github.ref_name }}
           case "$BRANCH" in
             develop) PORT=8081 ;;
             release) PORT=8082 ;;
-            master) PORT=8083 ;;
+            main) PORT=8083 ;;
             *) echo "Неизвестная ветка: $BRANCH. Выход..."; exit 1 ;;
           esac
           docker pull $IMAGE_NAME:$DOCKER_TAG
