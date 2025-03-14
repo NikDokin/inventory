@@ -84,19 +84,19 @@ jobs:
 
       - name: Determine Environment File
         run: |
-          if [[ "${{ github.ref_name }}" == "main" ]]; then
+          if [[ "${{ github.ref_name }}" =~ ^release$ || "${{ github.ref_name }}" == "master" ]]; then
             echo "ENV_FILE=prod.env" >> $GITHUB_ENV
-            echo "Deploying from main branch, using prod.env"
+            echo "Deploying from master/release/main branch, using prod.env"
           else
             echo "ENV_FILE=dev.env" >> $GITHUB_ENV
             echo "Deploying from develop branch, using dev.env"
           fi
         shell: bash
+        
 
       - name: Set up environment
         shell: bash
         env:
-          ENV_FILE: dev.env
           VAULT_ADDR: http://94.131.105.35:8200
           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         run: |
