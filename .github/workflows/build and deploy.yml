@@ -29,7 +29,7 @@ jobs:
       - name: Determine Docker Image Tag
         id: tag
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          if [[ "$GITHUB_REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             BRANCH=$(git branch -r --contains $(git rev-parse HEAD) | grep -E 'origin/master|origin/release' || true)
             if [[ -z "$BRANCH" ]]; then
               echo "Этот тег не принадлежит master или release. Выход..."
