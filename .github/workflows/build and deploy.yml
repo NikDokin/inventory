@@ -11,7 +11,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     outputs:
-      docker_tag: ${{ steps.tag.outputs.docker_tag }}  # Передаем тег как output
+      docker_tag: ${{ steps.tag.outputs.docker_tag }}
+      env_file: ${{ steps.tag.outputs.env_file }}  # Добавляем env_file как output
 
     steps:
       - name: Checkout repository
@@ -46,13 +47,15 @@ jobs:
             TAG=${GITHUB_REF#refs/tags/}
             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
             echo "tag=$TAG" >> $GITHUB_ENV
+            echo "env_file=prod.env" >> $GITHUB_OUTPUT  # prod.env для тегов из master/release
           else
             SHORT_SHA=$(git rev-parse --short HEAD)
             TAG="develop-${SHORT_SHA}"
             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
             echo "tag=$TAG" >> $GITHUB_ENV
+            echo "env_file=dev.env" >> $GITHUB_OUTPUT  # dev.env для develop
           fi
-          
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -91,18 +94,13 @@ jobs:
           echo "Ref: ${{ github.ref }}"
           echo "SHA: ${{ github.sha }}"
           echo "Tag from build: ${{ needs.build-and-push.outputs.docker_tag }}"
+          echo "Env file from build: ${{ needs.build-and-push.outputs.env_file }}"
 
-      - name: Determine Environment File
+      - name: Set Environment File
         run: |
-          if [[ "${{ github.ref_name }}" =~ ^release$ || "${{ github.ref_name }}" == "master" ]]; then
-            echo "ENV_FILE=prod.env" >> $GITHUB_ENV
-            echo "Deploying from master/release/main branch, using prod.env"
-          else
-            echo "ENV_FILE=dev.env" >> $GITHUB_ENV
-            echo "Deploying from develop branch, using dev.env"
-          fi
+          echo "ENV_FILE=${{ needs.build-and-push.outputs.env_file }}" >> $GITHUB_ENV
+          echo "Using environment file: ${{ needs.build-and-push.outputs.env_file }}"
         shell: bash
-        
 
       - name: Set up environment
         shell: bash
@@ -172,7 +170,7 @@ jobs:
             develop) PORT=8081 ;;
             release) PORT=8082 ;;
             master) PORT=8083 ;;
-            *) echo "Неизвестная ветка: $BRANCH. Выход..."; exit 1 ;;
+            *) echo "Неизвестная ветка или тег: $BRANCH. Используем порт по умолчанию 8081."; PORT=8081 ;;
           esac
           docker pull $IMAGE_NAME:$DOCKER_TAG
           docker stop app_$BRANCH || true
