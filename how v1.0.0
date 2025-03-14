@@ -1,0 +1,32 @@
+[33mtag v1.0.0[m
+Tagger: Nikita Dokin <nik000555@mail.ru>
+Date:   Fri Mar 14 17:00:10 2025 +0600
+
+Updated v1.0.0 tag
+
+[33mcommit bbdaeda86bce8d3d34e558cb3a7461a38e75faa4[m[33m ([m[1;33mtag: [m[1;33mv1.0.0[m[33m)[m
+Author: Nikita Dokin <nik000555@mail.ru>
+Date:   Fri Mar 14 16:58:29 2025 +0600
+
+    test
+
+[1mdiff --git a/.github/workflows/build and deploy.yml b/.github/workflows/build and deploy.yml[m
+[1mindex 7f5ac02..c7873ee 100644[m
+[1m--- a/.github/workflows/build and deploy.yml[m	
+[1m+++ b/.github/workflows/build and deploy.yml[m	
+[36m@@ -26,11 +26,14 @@[m [mjobs:[m
+           username: ${{ secrets.DOCKER_HUB_USERNAME }}[m
+           password: ${{ secrets.DOCKER_HUB_TOKEN }}[m
+ [m
+[32m+[m[32m      - name: Fetch all branches and tags[m
+[32m+[m[32m        run: git fetch --all --tags[m
+[32m+[m[41m        [m
+       - name: Determine Docker Image Tag[m
+         id: tag[m
+         run: |[m
+           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then[m
+[31m-            BRANCH=$(git branch --contains ${{ github.sha }} | grep -E 'master|release' || true)[m
+[32m+[m[32m            BRANCH=$(git branch -r --contains $(git rev-parse HEAD) | grep -E 'origin/master|origin/release' || true)[m
+             if [[ -z "$BRANCH" ]]; then[m
+               echo "Этот тег не принадлежит master или release. Выход..."[m
+               exit 1[m
