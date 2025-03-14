@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -31,9 +33,10 @@ jobs:
         run: |
           echo "GITHUB_REF=$GITHUB_REF"
           echo "HEAD=$(git rev-parse HEAD)"
-          echo "Branches containing HEAD:"
-          git branch -r --contains $(git rev-parse HEAD) || true
-          BRANCH=$(git branch -r --contains $(git rev-parse HEAD) | grep -E 'origin/master|origin/release' || true)
+          echo "Branches containing tag $GITHUB_REF:"
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          git branch -r --contains refs/tags/$TAG_NAME || true
+          BRANCH=$(git branch -r --contains refs/tags/$TAG_NAME | grep -E 'origin/master|origin/release' || true)
           echo "Filtered branches: '$BRANCH'"
           if [[ "$GITHUB_REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             if [[ -z "$BRANCH" ]]; then
@@ -48,8 +51,8 @@ jobs:
             TAG="develop-${SHORT_SHA}"
             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
             echo "tag=$TAG" >> $GITHUB_ENV
-            fi
-
+          fi
+          
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
