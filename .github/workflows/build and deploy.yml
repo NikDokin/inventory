@@ -29,8 +29,13 @@ jobs:
       - name: Determine Docker Image Tag
         id: tag
         run: |
+          echo "GITHUB_REF=$GITHUB_REF"
+          echo "HEAD=$(git rev-parse HEAD)"
+          echo "Branches containing HEAD:"
+          git branch -r --contains $(git rev-parse HEAD) || true
+          BRANCH=$(git branch -r --contains $(git rev-parse HEAD) | grep -E 'origin/master|origin/release' || true)
+          echo "Filtered branches: '$BRANCH'"
           if [[ "$GITHUB_REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            BRANCH=$(git branch -r --contains $(git rev-parse HEAD) | grep -E 'origin/master|origin/release' || true)
             if [[ -z "$BRANCH" ]]; then
               echo "Этот тег не принадлежит master или release. Выход..."
               exit 1
@@ -43,7 +48,7 @@ jobs:
             TAG="develop-${SHORT_SHA}"
             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
             echo "tag=$TAG" >> $GITHUB_ENV
-          fi
+            fi
 
       - name: Extract metadata for Docker
         id: meta
