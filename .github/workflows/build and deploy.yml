@@ -26,11 +26,14 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
+      - name: Fetch all branches and tags
+        run: git fetch --all --tags
+        
       - name: Determine Docker Image Tag
         id: tag
         run: |
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-            BRANCH=$(git branch --contains ${{ github.sha }} | grep -E 'master|release' || true)
+            BRANCH=$(git branch -r --contains $(git rev-parse HEAD) | grep -E 'origin/master|origin/release' || true)
             if [[ -z "$BRANCH" ]]; then
               echo "Этот тег не принадлежит master или release. Выход..."
               exit 1
