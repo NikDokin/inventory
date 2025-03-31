@@ -83,7 +83,10 @@ jobs:
           
           kubectl cluster-info
         
-
+      - name: Set kubectl context
+        run: |
+          kubectl config use-context kubernetes-admin@kubernetes
+      
       - name: Update Kubernetes Deployment
         run: |
           echo "Updating Kubernetes deployment with image: shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}"
