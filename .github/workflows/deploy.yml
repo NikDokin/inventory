@@ -75,28 +75,36 @@ jobs:
 
       - name: Configure kubectl context
         run: |
+          # Сохраняем содержимое секрета KUBE_CONFIG в файл kubeconfig
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
           export KUBECONFIG=$(pwd)/kubeconfig
           
+          # Проверяем содержимое конфигурации
           kubectl config view --raw
-
+          
+          # Список всех доступных контекстов
           kubectl config get-contexts
           
+          # Переключаемся на правильный контекст
           kubectl config use-context kubernetes-admin@kubernetes
           
+          # Проверка состояния
           kubectl cluster-info
           kubectl get nodes
-
-      
+  
       - name: Update Kubernetes Deployment
         run: |
           # Убедитесь, что контекст переключен
           kubectl config use-context kubernetes-admin@kubernetes
-      
+          
+          # Обновление образа деплоймента
           echo "Updating Kubernetes deployment with image: shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}"
           kubectl set image deployment/myapp myapp=shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}
+          
+          # Ожидание завершения развертывания
           kubectl rollout status deployment/myapp
       
+  
 
       - name: Apply Kubernetes changes (if needed)
         run: |
