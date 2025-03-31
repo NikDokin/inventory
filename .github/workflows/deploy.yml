@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       docker_tag: ${{ steps.tag.outputs.docker_tag }}
-      env_file: ${{ steps.tag.outputs.env_file }}  # Добавляем env_file как output
+      env_file: ${{ steps.tag.outputs.env_file }}
 
     steps:
       - name: Checkout repository
@@ -71,12 +71,17 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v1
         with:
-          version: 'latest'
+          version: 'v1.29.15'  # Укажите версию kubectl, соответствующую вашему кластеру
 
       - name: Configure kubectl context
         run: |
+          # Запись содержимого секрета KUBE_CONFIG в файл kubeconfig
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
-          export KUBECONFIG=kubeconfig
+          
+          # Экспорт переменной окружения для kubectl
+          export KUBECONFIG=$(pwd)/kubeconfig
+          
+          # Проверка содержимого конфигурации
           kubectl config view --raw
 
       - name: Update Kubernetes Deployment
