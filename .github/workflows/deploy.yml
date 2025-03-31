@@ -85,7 +85,7 @@ jobs:
           # Переключаемся на правильный контекст
           kubectl config use-context kubernetes-admin@kubernetes
           
-          # Проверяем доступность кластера
+          # Проверка подключения к кластеру
           kubectl cluster-info
           
           # Проверка состояния узлов
@@ -93,9 +93,13 @@ jobs:
       
       - name: Update Kubernetes Deployment
         run: |
+          # Убедитесь, что контекст переключен
+          kubectl config use-context kubernetes-admin@kubernetes
+      
           echo "Updating Kubernetes deployment with image: shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}"
           kubectl set image deployment/myapp myapp=shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}
           kubectl rollout status deployment/myapp
+      
 
       - name: Apply Kubernetes changes (if needed)
         run: |
