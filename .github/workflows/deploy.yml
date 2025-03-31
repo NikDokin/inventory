@@ -77,6 +77,8 @@ jobs:
         run: |
           # Сохраняем содержимое секрета KUBE_CONFIG в файл kubeconfig
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
+          
+          # Устанавливаем переменную окружения KUBECONFIG с абсолютным путем
           export KUBECONFIG=$(pwd)/kubeconfig
           
           # Проверяем содержимое конфигурации
@@ -91,10 +93,12 @@ jobs:
           # Проверка состояния
           kubectl cluster-info
           kubectl get nodes
-  
+      
       - name: Update Kubernetes Deployment
         run: |
           # Убедитесь, что контекст переключен
+          export KUBECONFIG=$(pwd)/kubeconfig  # Убедитесь, что KUBECONFIG указан в каждом шаге
+      
           kubectl config use-context kubernetes-admin@kubernetes
           
           # Обновление образа деплоймента
@@ -103,6 +107,7 @@ jobs:
           
           # Ожидание завершения развертывания
           kubectl rollout status deployment/myapp
+        
       
   
 
