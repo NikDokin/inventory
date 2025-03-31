@@ -1,182 +1,182 @@
-name: Build and Deploy Docker Image
+# name: Build and Deploy Docker Image
 
-on:
-  push:
-    branches:
-      - develop
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+# on:
+#   push:
+#     branches:
+#       - develop
+#     tags:
+#       - 'v[0-9]+.[0-9]+.[0-9]+'
 
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    outputs:
-      docker_tag: ${{ steps.tag.outputs.docker_tag }}
-      env_file: ${{ steps.tag.outputs.env_file }}  # Добавляем env_file как output
+# jobs:
+#   build-and-push:
+#     runs-on: ubuntu-latest
+#     outputs:
+#       docker_tag: ${{ steps.tag.outputs.docker_tag }}
+#       env_file: ${{ steps.tag.outputs.env_file }}  # Добавляем env_file как output
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+#       - name: Login to Docker Hub
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_HUB_USERNAME }}
+#           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Determine Docker Image Tag
-        id: tag
-        run: |
-          echo "GITHUB_REF=$GITHUB_REF"
-          echo "HEAD=$(git rev-parse HEAD)"
-          echo "Branches containing tag $GITHUB_REF:"
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          git branch -r --contains refs/tags/$TAG_NAME || true
-          BRANCH=$(git branch -r --contains refs/tags/$TAG_NAME | grep -E 'origin/master|origin/release' || true)
-          echo "Filtered branches: '$BRANCH'"
-          if [[ "$GITHUB_REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            if [[ -z "$BRANCH" ]]; then
-              echo "Этот тег не принадлежит master или release. Выход..."
-              exit 1
-            fi
-            TAG=${GITHUB_REF#refs/tags/}
-            echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
-            echo "tag=$TAG" >> $GITHUB_ENV
-            echo "env_file=prod.env" >> $GITHUB_OUTPUT  # prod.env для тегов из master/release
-          else
-            SHORT_SHA=$(git rev-parse --short HEAD)
-            TAG="develop-${SHORT_SHA}"
-            echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
-            echo "tag=$TAG" >> $GITHUB_ENV
-            echo "env_file=dev.env" >> $GITHUB_OUTPUT  # dev.env для develop
-          fi
+#       - name: Determine Docker Image Tag
+#         id: tag
+#         run: |
+#           echo "GITHUB_REF=$GITHUB_REF"
+#           echo "HEAD=$(git rev-parse HEAD)"
+#           echo "Branches containing tag $GITHUB_REF:"
+#           TAG_NAME=${GITHUB_REF#refs/tags/}
+#           git branch -r --contains refs/tags/$TAG_NAME || true
+#           BRANCH=$(git branch -r --contains refs/tags/$TAG_NAME | grep -E 'origin/master|origin/release' || true)
+#           echo "Filtered branches: '$BRANCH'"
+#           if [[ "$GITHUB_REF" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+#             if [[ -z "$BRANCH" ]]; then
+#               echo "Этот тег не принадлежит master или release. Выход..."
+#               exit 1
+#             fi
+#             TAG=${GITHUB_REF#refs/tags/}
+#             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
+#             echo "tag=$TAG" >> $GITHUB_ENV
+#             echo "env_file=prod.env" >> $GITHUB_OUTPUT  # prod.env для тегов из master/release
+#           else
+#             SHORT_SHA=$(git rev-parse --short HEAD)
+#             TAG="develop-${SHORT_SHA}"
+#             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
+#             echo "tag=$TAG" >> $GITHUB_ENV
+#             echo "env_file=dev.env" >> $GITHUB_OUTPUT  # dev.env для develop
+#           fi
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: shifter1703/fungicibus
-          tags: ${{ env.tag }}
-          labels: |
-            org.opencontainers.image.title=your-repo-name
-            org.opencontainers.image.version=${{ env.tag }}
-            org.opencontainers.image.source=${{ github.repository }}
+#       - name: Extract metadata for Docker
+#         id: meta
+#         uses: docker/metadata-action@v5
+#         with:
+#           images: shifter1703/fungicibus
+#           tags: ${{ env.tag }}
+#           labels: |
+#             org.opencontainers.image.title=your-repo-name
+#             org.opencontainers.image.version=${{ env.tag }}
+#             org.opencontainers.image.source=${{ github.repository }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=shifter1703/fungicibus:cache
-          cache-to: type=inline
+#       - name: Build and push Docker image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: .
+#           file: docker/Dockerfile
+#           push: true
+#           tags: ${{ steps.meta.outputs.tags }}
+#           labels: ${{ steps.meta.outputs.labels }}
+#           cache-from: type=registry,ref=shifter1703/fungicibus:cache
+#           cache-to: type=inline
 
-  deploy:
-    needs: build-and-push
-    if: ${{ success() }}
-    runs-on: self-hosted
+#   deploy:
+#     needs: build-and-push
+#     if: ${{ success() }}
+#     runs-on: self-hosted
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
 
-      - name: Debug info
-        run: |
-          echo "Ref: ${{ github.ref }}"
-          echo "SHA: ${{ github.sha }}"
-          echo "Tag from build: ${{ needs.build-and-push.outputs.docker_tag }}"
-          echo "Env file from build: ${{ needs.build-and-push.outputs.env_file }}"
+#       - name: Debug info
+#         run: |
+#           echo "Ref: ${{ github.ref }}"
+#           echo "SHA: ${{ github.sha }}"
+#           echo "Tag from build: ${{ needs.build-and-push.outputs.docker_tag }}"
+#           echo "Env file from build: ${{ needs.build-and-push.outputs.env_file }}"
 
-      - name: Set Environment File
-        run: |
-          echo "ENV_FILE=${{ needs.build-and-push.outputs.env_file }}" >> $GITHUB_ENV
-          echo "Using environment file: ${{ needs.build-and-push.outputs.env_file }}"
-        shell: bash
+#       - name: Set Environment File
+#         run: |
+#           echo "ENV_FILE=${{ needs.build-and-push.outputs.env_file }}" >> $GITHUB_ENV
+#           echo "Using environment file: ${{ needs.build-and-push.outputs.env_file }}"
+#         shell: bash
 
-      - name: Set up environment
-        shell: bash
-        env:
-          VAULT_ADDR: http://94.131.105.35:8200
-          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
-        run: |
-          echo "Using environment file: $ENV_FILE"
-          export VAULT_TOKEN="$VAULT_TOKEN"
+#       - name: Set up environment
+#         shell: bash
+#         env:
+#           VAULT_ADDR: http://94.131.105.35:8200
+#           VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
+#         run: |
+#           echo "Using environment file: $ENV_FILE"
+#           export VAULT_TOKEN="$VAULT_TOKEN"
       
-          # Проверка подключения к Vault
-          vault status || { echo "Cannot connect to Vault"; exit 1; }
+#           # Проверка подключения к Vault
+#           vault status || { echo "Cannot connect to Vault"; exit 1; }
       
-          # Проверка содержимого файла
-          echo "Raw content of $ENV_FILE:"
-          cat -v "$ENV_FILE"
+#           # Проверка содержимого файла
+#           echo "Raw content of $ENV_FILE:"
+#           cat -v "$ENV_FILE"
       
-          # Создание временного файла для результата
-          touch parsed_env
+#           # Создание временного файла для результата
+#           touch parsed_env
       
-          # Чтение файла, игнорируя комментарии и пустые строки
-          while IFS='=' read -r key value || [[ -n "$key" ]]; do
-            # Пропускаем пустые строки и комментарии
-            [[ -z "$key" || "$key" =~ ^# ]] && continue
+#           # Чтение файла, игнорируя комментарии и пустые строки
+#           while IFS='=' read -r key value || [[ -n "$key" ]]; do
+#             # Пропускаем пустые строки и комментарии
+#             [[ -z "$key" || "$key" =~ ^# ]] && continue
       
-            # Убираем лишние пробелы
-            key=$(echo "$key" | xargs)
-            value=$(echo "$value" | xargs)
+#             # Убираем лишние пробелы
+#             key=$(echo "$key" | xargs)
+#             value=$(echo "$value" | xargs)
       
-            echo "Processing: '$key'='$value'"
+#             echo "Processing: '$key'='$value'"
       
-            # Проверка с помощью grep
-            if echo "$value" | grep -qE '^\${[^}]+}$'; then
-              echo "Value matches secret pattern: '$value'"
-              secret_name=$(echo "$value" | cut -d'{' -f2 | cut -d'}' -f1)
-              echo "Extracted secret_name: '$secret_name'"
-              echo "Fetching secret '$secret_name' from Vault..."
-              secret_value=$(vault kv get -field="$secret_name" secret/myapp)
-              if [[ -z "$secret_value" ]]; then
-                echo "Error: Secret '$secret_name' not found in Vault at secret/myapp"
-                exit 1
-              fi
-              echo "$key=$secret_value" >> parsed_env
-            else
-              echo "No match for '$value' as a secret reference"
-              echo "$key=$value" >> parsed_env
-            fi
-          done < <(cat "$ENV_FILE"; echo)
+#             # Проверка с помощью grep
+#             if echo "$value" | grep -qE '^\${[^}]+}$'; then
+#               echo "Value matches secret pattern: '$value'"
+#               secret_name=$(echo "$value" | cut -d'{' -f2 | cut -d'}' -f1)
+#               echo "Extracted secret_name: '$secret_name'"
+#               echo "Fetching secret '$secret_name' from Vault..."
+#               secret_value=$(vault kv get -field="$secret_name" secret/myapp)
+#               if [[ -z "$secret_value" ]]; then
+#                 echo "Error: Secret '$secret_name' not found in Vault at secret/myapp"
+#                 exit 1
+#               fi
+#               echo "$key=$secret_value" >> parsed_env
+#             else
+#               echo "No match for '$value' as a secret reference"
+#               echo "$key=$value" >> parsed_env
+#             fi
+#           done < <(cat "$ENV_FILE"; echo)
       
-          echo "Parsed .env content:"
-          cat parsed_env
+#           echo "Parsed .env content:"
+#           cat parsed_env
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+#       - name: Login to Docker Hub
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_HUB_USERNAME }}
+#           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Pull and restart Docker container
-        shell: bash
-        env:
-          IMAGE_NAME: shifter1703/fungicibus
-          DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}  # Используем тег из предыдущего job
-        run: |
-          BRANCH=${{ github.ref_name }}
-          case "$BRANCH" in
-            develop) PORT=8081 ;;
-            release) PORT=8082 ;;
-            master) PORT=8083 ;;
-            *) echo "Неизвестная ветка или тег: $BRANCH. Используем порт по умолчанию 8081."; PORT=8081 ;;
-          esac
-          docker pull $IMAGE_NAME:$DOCKER_TAG
-          docker stop app_$BRANCH || true
-          docker rm app_$BRANCH || true
-          docker run -d \
-            --name app_$BRANCH \
-            --env-file parsed_env \
-            -p $PORT:80 \
-            $IMAGE_NAME:$DOCKER_TAG
+#       - name: Pull and restart Docker container
+#         shell: bash
+#         env:
+#           IMAGE_NAME: shifter1703/fungicibus
+#           DOCKER_TAG: ${{ needs.build-and-push.outputs.docker_tag }}  # Используем тег из предыдущего job
+#         run: |
+#           BRANCH=${{ github.ref_name }}
+#           case "$BRANCH" in
+#             develop) PORT=8081 ;;
+#             release) PORT=8082 ;;
+#             master) PORT=8083 ;;
+#             *) echo "Неизвестная ветка или тег: $BRANCH. Используем порт по умолчанию 8081."; PORT=8081 ;;
+#           esac
+#           docker pull $IMAGE_NAME:$DOCKER_TAG
+#           docker stop app_$BRANCH || true
+#           docker rm app_$BRANCH || true
+#           docker run -d \
+#             --name app_$BRANCH \
+#             --env-file parsed_env \
+#             -p $PORT:80 \
+#             $IMAGE_NAME:$DOCKER_TAG
