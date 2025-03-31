@@ -82,14 +82,16 @@ jobs:
           # Проверяем содержимое конфигурации
           kubectl config view --raw
           
-          # Переключаемся на правильный контекст
-          kubectl config use-context kubernetes-admin@kubernetes
+          # Список всех доступных контекстов
+          kubectl config get-contexts
           
-          # Проверка подключения к кластеру
+          # Переключаемся на правильный контекст (если он есть)
+          kubectl config use-context <correct-context-name>
+          
+          # Проверка состояния
           kubectl cluster-info
-          
-          # Проверка состояния узлов
           kubectl get nodes
+
       
       - name: Update Kubernetes Deployment
         run: |
