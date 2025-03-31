@@ -75,14 +75,16 @@ jobs:
 
       - name: Configure kubectl context
         run: |
-          # Запись содержимого секрета KUBE_CONFIG в файл kubeconfig
+          # Сохранение содержимого секрета KUBE_CONFIG в файл kubeconfig
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
-          
-          # Экспорт переменной окружения для kubectl
           export KUBECONFIG=$(pwd)/kubeconfig
           
           # Проверка содержимого конфигурации
           kubectl config view --raw
+          
+          # Проверка доступности кластера
+          kubectl cluster-info
+        
 
       - name: Update Kubernetes Deployment
         run: |
