@@ -13,7 +13,10 @@ spec:
         app: myapp
     spec:
       containers:
-      - name: myapp
-        image: shifter1703/fungicibus:${DOCKER_TAG}
-        ports:
-        - containerPort: 80
+        - name: myapp
+          image: shifter1703/fungicibus:${DOCKER_TAG}
+          ports:
+            - containerPort: 8999
+          envFrom:
+            - configMapRef:
+                name: prod-env
