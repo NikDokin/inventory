@@ -109,9 +109,13 @@ jobs:
           # Подставляем переменную DOCKER_TAG в файл deployment.yaml
           echo "DOCKER_TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
           
+          # Создаём ConfigMap из файла prod.env
+          kubectl create configmap prod-env --from-env-file=prod.env --dry-run=client -o yaml | kubectl apply -f -
+          
           # Применение деплоймента с подставленной переменной
           envsubst < k8s/deployment.yaml | kubectl apply -f -
           kubectl apply -f k8s/service.yaml
+      
 
       - name: Get Kubernetes pod status
         run: |
