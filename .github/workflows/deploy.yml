@@ -71,4 +71,33 @@ jobs:
 
       - name: Configure kubectl context
         run: |
-          echo "${
+          echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
+          export KUBECONFIG=$(pwd)/kubeconfig
+          kubectl config use-context kubernetes-admin@kubernetes
+          kubectl cluster-info
+          kubectl get nodes
+
+      # Этот шаг теперь единственный для создания ConfigMap из prod.env
+      - name: Create ConfigMap from prod.env
+        run: |
+          kubectl create configmap prod-env --from-env-file=prod.env --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Update Kubernetes Deployment
+        run: |
+          export KUBECONFIG=$(pwd)/kubeconfig
+          kubectl set image deployment/myapp myapp=shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}
+          kubectl rollout status deployment/myapp
+
+      - name: Apply Kubernetes changes (if needed)
+        run: |
+          echo "DOCKER_TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
+          envsubst < k8s/deployment.yaml | kubectl apply -f -
+          kubectl apply -f k8s/service.yaml
+
+      - name: Get Kubernetes pod status
+        run: |
+          kubectl get pods
+
+      - name: Get Kubernetes service status
+        run: |
+          kubectl get svc
