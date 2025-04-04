@@ -37,7 +37,7 @@ jobs:
             SHORT_SHA=$(git rev-parse --short HEAD)
             TAG="develop-${SHORT_SHA}"
             echo "docker_tag=$TAG" >> $GITHUB_OUTPUT
-            echo "env_file=dev.env" >> $GITHUB_OUTPUT  
+            echo "env_file=prod.env" >> $GITHUB_OUTPUT  
           fi
 
       - name: Build and push Docker image
