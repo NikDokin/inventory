@@ -89,7 +89,12 @@ jobs:
           # Проверка состояния
           kubectl cluster-info
           kubectl get nodes
-      
+
+      - name: Create ConfigMap from prod.env
+        run: |
+         kubectl create configmap prod-env --from-env-file=prod.env --dry-run=client -o yaml | kubectl apply -f -
+
+
       - name: Update Kubernetes Deployment
         run: |
           # Убедитесь, что контекст переключен
