@@ -71,26 +71,48 @@ jobs:
 
       - name: Configure kubectl context
         run: |
+          # Сохраняем содержимое секрета KUBE_CONFIG в файл kubeconfig
           echo "${{ secrets.KUBE_CONFIG }}" > kubeconfig
+          
+          # Устанавливаем переменную окружения KUBECONFIG с абсолютным путем
           export KUBECONFIG=$(pwd)/kubeconfig
+          
+          # Проверяем содержимое конфигурации
+          kubectl config view --raw
+          
+          # Список всех доступных контекстов
+          kubectl config get-contexts
+          
+          # Переключаемся на правильный контекст
           kubectl config use-context kubernetes-admin@kubernetes
+          
+          # Проверка состояния
           kubectl cluster-info
           kubectl get nodes
-
-      # Этот шаг теперь единственный для создания ConfigMap из prod.env
-      - name: Create ConfigMap from prod.env
-        run: |
-          kubectl create configmap prod-env --from-env-file=prod.env --dry-run=client -o yaml | kubectl apply -f -
-
+      
       - name: Update Kubernetes Deployment
         run: |
-          export KUBECONFIG=$(pwd)/kubeconfig
+          # Убедитесь, что контекст переключен
+          export KUBECONFIG=$(pwd)/kubeconfig  # Убедитесь, что KUBECONFIG указан в каждом шаге
+      
+          kubectl config use-context kubernetes-admin@kubernetes
+          
+          # Обновление образа деплоймента
+          echo "Updating Kubernetes deployment with image: shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}"
           kubectl set image deployment/myapp myapp=shifter1703/fungicibus:${{ needs.build-and-push.outputs.docker_tag }}
+          
+          # Ожидание завершения развертывания
           kubectl rollout status deployment/myapp
 
       - name: Apply Kubernetes changes (if needed)
         run: |
+          # Создаем ConfigMap из prod.env, который находится в репозитории
+          kubectl create configmap prod-env --from-env-file=prod.env --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Подставляем переменную DOCKER_TAG в файл deployment.yaml
           echo "DOCKER_TAG=${{ needs.build-and-push.outputs.docker_tag }}" >> $GITHUB_ENV
+          
+          # Применение деплоймента с подставленной переменной
           envsubst < k8s/deployment.yaml | kubectl apply -f -
           kubectl apply -f k8s/service.yaml
 
